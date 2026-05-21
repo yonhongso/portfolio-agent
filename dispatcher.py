@@ -2559,48 +2559,260 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
 </body></html>"""
 
 
+def _inject_section(html: str, start_marker: str, end_marker: str, new_content: str) -> str:
+    """마커 사이 콘텐츠 교체 헬퍼."""
+    if start_marker in html and end_marker in html:
+        before = html[:html.index(start_marker) + len(start_marker)]
+        after  = html[html.index(end_marker):]
+        return before + "\n" + new_content + "\n  " + after
+    return html
+
+
 def save_dashboard(signals: list[ClassifiedSignal],
                    drafts_data: Optional[list[dict]] = None,
                    path: str = "dashboard.html") -> str:
     """
     기존 dashboard.html 템플릿을 유지하면서
-    <!-- DAILY-AUTO-START --> ~ <!-- DAILY-AUTO-END --> 사이만 교체.
-    마커가 없으면 전체 재생성(fallback).
+    각 AUTO 마커 사이 콘텐츠를 교체.
     """
+    import re
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # ── 기존 파일 읽기
     try:
         with open(path, "r", encoding="utf-8") as f:
-            original = f.read()
+            html = f.read()
     except FileNotFoundError:
-        original = ""
+        html = ""
 
-    START_MARKER = "<!-- DAILY-AUTO-START -->"
-    END_MARKER   = "<!-- DAILY-AUTO-END -->"
-
-    if START_MARKER in original and END_MARKER in original:
-        # ── 마커 사이만 교체 (템플릿 유지)
-        new_section = _build_daily_overview_section(signals, generated_at)
-        before = original[:original.index(START_MARKER) + len(START_MARKER)]
-        after  = original[original.index(END_MARKER):]
-        html   = before + "\n" + new_section + "\n  " + after
-        # 날짜 메타 업데이트
-        import re
-        html = re.sub(
-            r'(CONFIDENTIAL\s*·\s*)[\d\-]+ [\d:]+ 기준',
-            f'\\g<1>{generated_at} 기준',
-            html
-        )
-    else:
-        # ── fallback: 전체 재생성
+    if "<!-- DAILY-AUTO-START -->" not in html:
         logger.warning("[Dashboard] 마커 없음 — 전체 재생성")
         html = build_dashboard_html(signals, generated_at, drafts_data=drafts_data)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+        return path
+
+    # ── 1. Daily 섹션
+    html = _inject_section(html,
+        "<!-- DAILY-AUTO-START -->", "<!-- DAILY-AUTO-END -->",
+        _build_daily_overview_section(signals, generated_at))
+
+    # ── 2. Weekly 섹션
+    if "<!-- WEEKLY-AUTO-START -->" in html:
+        html = _inject_section(html,
+            "<!-- WEEKLY-AUTO-START -->", "<!-- WEEKLY-AUTO-END -->",
+            _build_weekly_section(signals, generated_at))
+
+    # ── 3. Monthly 섹션
+    if "<!-- MONTHLY-AUTO-START -->" in html:
+        html = _inject_section(html,
+            "<!-- MONTHLY-AUTO-START -->", "<!-- MONTHLY-AUTO-END -->",
+            _build_monthly_section(signals, generated_at))
+
+    # ── 4. 커뮤니케이션 초안 섹션
+    if "<!-- DRAFTS-AUTO-START -->" in html:
+        html = _inject_section(html,
+            "<!-- DRAFTS-AUTO-START -->", "<!-- DRAFTS-AUTO-END -->",
+            _build_drafts_section(signals))
+
+    # ── 날짜 메타 업데이트
+    html = re.sub(r'<!-- META-DATE -->.*?<!-- /META-DATE -->',
+                  f'<!-- META-DATE -->{generated_at}<!-- /META-DATE -->', html)
 
     with open(path, "w", encoding="utf-8") as f:
         f.write(html)
     logger.info(f"[Dashboard] 업데이트 완료 → {path} ({generated_at})")
     return path
+
+
+def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
+    """Weekly 탭 내부 콘텐츠 생성."""
+    from collections import defaultdict as _dd
+    reds    = [s for s in signals if s.action_flag == "red"]
+    yellows = [s for s in signals if s.action_flag == "yellow"]
+    whites  = [s for s in signals if s.action_flag == "white"]
+
+    # 주간 AI 인사이트 생성
+    try:
+        ai_insight = _generate_weekly_insight(signals)
+    except Exception:
+        ai_insight = "주간 인사이트 생성 실패 — 수동 검토 필요."
+
+    # 회사별 집계
+    by_co: dict = _dd(list)
+    for s in signals:
+        by_co[s.portfolio_name].append(s)
+
+    top_items = sorted(signals,
+        key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag,2), x.source_tier))[:5]
+    top_html = "".join(
+        f"<div style='padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px'>"
+        f"{'🔴' if s.action_flag=='red' else '🟡' if s.action_flag=='yellow' else '⚪'} "
+        f"<b>{s.portfolio_name}</b> [{s.signal_type}] — {(s.summary_ko or s.title or '')[:60]}…</div>"
+        for s in top_items
+    )
+
+    co_summary = "".join(
+        f"<div style='display:flex;justify-content:space-between;padding:5px 0;"
+        f"border-bottom:1px solid #f5f5f5;font-size:12px'>"
+        f"<span style='font-weight:600'>{co}</span>"
+        f"<span style='color:#868e96'>{len(arts)}건 "
+        f"({'🔴' if any(a.action_flag=='red' for a in arts) else '🟡' if any(a.action_flag=='yellow' for a in arts) else '⚪'})</span></div>"
+        for co, arts in sorted(by_co.items())
+    )
+
+    return f"""
+    <!-- 주간 지표 -->
+    <table width="100%" cellspacing="0" cellpadding="0"
+           style="margin:14px 0 10px;border-collapse:separate;border-spacing:8px 0">
+      <tr>
+        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #e74c3c;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:30px;font-weight:800;color:#c0392b">{len(reds)}</div>
+          <div style="font-size:10px;color:#adb5bd;margin-top:4px">🔴 즉시검토</div>
+        </td>
+        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #f39c12;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:30px;font-weight:800;color:#d68910">{len(yellows)}</div>
+          <div style="font-size:10px;color:#adb5bd;margin-top:4px">🟡 동향주시</div>
+        </td>
+        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #adb5bd;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:30px;font-weight:800;color:#868e96">{len(whites)}</div>
+          <div style="font-size:10px;color:#adb5bd;margin-top:4px">⚪ 정기모니터링</div>
+        </td>
+        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #3498db;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:30px;font-weight:800;color:#2980b9">{len(by_co)}</div>
+          <div style="font-size:10px;color:#adb5bd;margin-top:4px">📡 감지 기업</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- AI 주간 인사이트 -->
+    <div class="exec-box" style="background:#f0f4ff;border-color:#3498db;">
+      <span class="e-label" style="color:#2980b9;">📊 Weekly AI Insight</span>
+      <div class="e-main" style="color:#1a1a2e;line-height:1.8;font-size:13px;white-space:pre-line">{ai_insight}</div>
+    </div>
+
+    <!-- 주간 Top 시그널 -->
+    <div class="section-header"><span>📌 주간 Top 시그널</span></div>
+    <div style="background:#fff;border-radius:8px;padding:12px 16px;border:1px solid #e9ecef;margin-bottom:16px">
+      {top_html}
+    </div>
+
+    <!-- 기업별 주간 현황 -->
+    <div class="section-header"><span>🏢 기업별 주간 현황</span></div>
+    <div style="background:#fff;border-radius:8px;padding:12px 16px;border:1px solid #e9ecef">
+      {co_summary}
+    </div>
+"""
+
+
+def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
+    """Monthly 탭 내부 콘텐츠 생성."""
+    from collections import defaultdict as _dd
+    now = datetime.now()
+
+    try:
+        ai_insight = _generate_monthly_insight(signals, now.year, now.month)
+    except Exception:
+        ai_insight = "월간 분석 생성 실패 — 수동 검토 필요."
+
+    reds    = [s for s in signals if s.action_flag == "red"]
+    yellows = [s for s in signals if s.action_flag == "yellow"]
+
+    # 신호 유형별 집계
+    type_counts: dict = _dd(int)
+    for s in signals:
+        type_counts[s.signal_type] += 1
+    top_types = sorted(type_counts.items(), key=lambda x: -x[1])[:5]
+    type_bars = "".join(
+        f"<div style='display:flex;align-items:center;gap:8px;margin-bottom:6px'>"
+        f"<span style='font-size:11px;width:110px;color:#495057'>{t}</span>"
+        f"<div style='flex:1;background:#e9ecef;border-radius:4px;height:8px'>"
+        f"<div style='width:{min(100, int(c/max(1,len(signals))*100*3))}%;background:#3498db;border-radius:4px;height:8px'></div></div>"
+        f"<span style='font-size:11px;color:#868e96'>{c}건</span></div>"
+        for t, c in top_types
+    )
+
+    # 기업별 집계
+    by_co: dict = _dd(list)
+    for s in signals:
+        by_co[s.portfolio_name].append(s)
+    high_alert = [co for co, arts in by_co.items() if any(a.action_flag=="red" for a in arts)]
+
+    return f"""
+    <!-- 월간 요약 헤더 -->
+    <div style="background:linear-gradient(135deg,#1a2744,#2c3e6b);border-radius:10px;padding:18px 20px;margin-bottom:16px;color:#fff">
+      <div style="font-size:11px;opacity:.6;margin-bottom:4px">{now.year}년 {now.month}월 포트폴리오 총평</div>
+      <div style="font-size:18px;font-weight:700">Monthly Portfolio Review</div>
+      <div style="font-size:12px;opacity:.7;margin-top:6px">총 {len(signals)}건 시그널 · 즉시검토 {len(reds)}건 · 동향주시 {len(yellows)}건</div>
+    </div>
+
+    <!-- AI 월간 분석 -->
+    <div class="exec-box" style="background:#f0fff4;border-color:#27ae60;">
+      <span class="e-label" style="color:#27ae60;">📈 Monthly AI Analysis</span>
+      <div class="e-main" style="color:#1a1a2e;line-height:1.8;font-size:13px;white-space:pre-line">{ai_insight}</div>
+    </div>
+
+    <!-- 시그널 유형 분포 -->
+    <div class="section-header"><span>📊 시그널 유형 분포</span></div>
+    <div style="background:#fff;border-radius:8px;padding:14px 16px;border:1px solid #e9ecef;margin-bottom:16px">
+      {type_bars}
+    </div>
+
+    <!-- 즉시검토 기업 -->
+    <div class="section-header"><span>🔴 이달 즉시검토 기업</span></div>
+    <div style="background:#fff;border-radius:8px;padding:14px 16px;border:1px solid #e9ecef">
+      {''.join(f'<span style="display:inline-block;background:#fdf5f5;border:1px solid #e74c3c;color:#c0392b;border-radius:6px;padding:4px 12px;margin:3px;font-size:12px;font-weight:600">{co}</span>' for co in high_alert) or '<span style="color:#adb5bd;font-size:12px">이달 즉시검토 기업 없음</span>'}
+    </div>
+"""
+
+
+def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
+    """커뮤니케이션 초안 탭 내부 콘텐츠 생성."""
+    reds = [s for s in signals if s.action_flag == "red"][:6]
+    if not reds:
+        return '<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">오늘 즉시검토 시그널이 없어 초안이 생성되지 않았습니다.</div>'
+
+    rows = ""
+    for i, s in enumerate(reds):
+        try:
+            msg_exec, msg_portfolio = _draft_contact_messages(s)
+        except Exception:
+            msg_exec = f"[{s.signal_type}] {s.portfolio_name} 관련 이슈 보고드립니다.\n{s.summary_ko or ''}\n검토 부탁드립니다."
+            msg_portfolio = f"안녕하세요 대표님,\n\n{s.portfolio_name} 관련 {s.signal_type} 이슈({(s.title or '')[:40]})로 연락드립니다.\n\n현황 공유 부탁드립니다."
+
+        def _card(title, text, idx, kind):
+            esc = text.replace("'", "\\'").replace("\n", "\\n")
+            return f"""
+        <div style="background:#fff;border-radius:8px;border:1px solid #e9ecef;margin-bottom:10px;overflow:hidden">
+          <div style="background:#f8f9fa;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+               onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <span style="font-size:12px;font-weight:700;color:#495057">{title}</span>
+            <span style="font-size:11px;color:#6c757d">▼ 펼치기</span>
+          </div>
+          <div style="display:none;padding:12px 14px">
+            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px">{text}</pre>
+            <button onclick="navigator.clipboard.writeText('{esc}').then(()=>{{this.textContent='✓ 복사됨';setTimeout(()=>this.textContent='복사',2000)}})"
+                    style="font-size:11px;padding:5px 16px;background:#1a2744;color:#fff;border:none;border-radius:5px;cursor:pointer">복사</button>
+          </div>
+        </div>"""
+
+        rows += f"""
+      <div style="margin-bottom:20px">
+        <div style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #e9ecef">
+          <span style="background:#f3e5f5;color:#6c3483;border-radius:4px;padding:2px 8px;font-size:10px;margin-right:8px">{s.signal_type}</span>
+          {s.portfolio_name}
+        </div>
+        <div style="font-size:12px;color:#495057;margin-bottom:8px">{(s.summary_ko or s.title or '')[:80]}…</div>
+        {_card('📤 경영진 보고용 (내부)', msg_exec, i, 'exec')}
+        {_card('📧 포트폴리오사 대표 연락용', msg_portfolio, i, 'portfolio')}
+      </div>"""
+
+    return f"""
+    <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
+                padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7d4e00">
+      💡 <b>사용 방법:</b> 각 항목을 클릭하면 초안이 펼쳐집니다. <b>복사</b> 버튼으로 카카오톡·이메일에 붙여넣기 하세요.
+    </div>
+    {rows}
+"""
 
 
 def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
