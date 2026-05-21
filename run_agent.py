@@ -58,13 +58,20 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-print("[3/3] 텔레그램/이메일 발송...", flush=True)
+print("[3/3] 텔레그램 알림 발송...", flush=True)
 try:
-    dispatcher.send_daily(signals)
-    print("✅ 발송 완료!", flush=True)
+    dispatcher.send_telegram_alerts(signals)
+    print("✅ 텔레그램 발송 완료", flush=True)
 except Exception as e:
-    print(f"❌ 발송 실패: {e}", flush=True)
+    print(f"❌ 텔레그램 발송 실패: {e}", flush=True)
     traceback.print_exc()
-    # 발송 실패는 치명적이지 않으므로 exit하지 않음
+
+print("[3/3] 이메일 발송...", flush=True)
+try:
+    dispatcher.send_daily_email(signals)
+    print("✅ 이메일 발송 완료", flush=True)
+except Exception as e:
+    print(f"❌ 이메일 발송 실패: {e}", flush=True)
+    traceback.print_exc()
 
 print("=== 완료! ===", flush=True)
