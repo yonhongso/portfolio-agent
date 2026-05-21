@@ -2557,13 +2557,165 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
 def save_dashboard(signals: list[ClassifiedSignal],
                    drafts_data: Optional[list[dict]] = None,
                    path: str = "dashboard.html") -> str:
-    """대시보드 HTML 파일 저장 후 경로 반환."""
+    """
+    기존 dashboard.html 템플릿을 유지하면서
+    <!-- DAILY-AUTO-START --> ~ <!-- DAILY-AUTO-END --> 사이만 교체.
+    마커가 없으면 전체 재생성(fallback).
+    """
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-    html = build_dashboard_html(signals, generated_at, drafts_data=drafts_data)
+
+    # ── 기존 파일 읽기
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            original = f.read()
+    except FileNotFoundError:
+        original = ""
+
+    START_MARKER = "<!-- DAILY-AUTO-START -->"
+    END_MARKER   = "<!-- DAILY-AUTO-END -->"
+
+    if START_MARKER in original and END_MARKER in original:
+        # ── 마커 사이만 교체 (템플릿 유지)
+        new_section = _build_daily_overview_section(signals, generated_at)
+        before = original[:original.index(START_MARKER) + len(START_MARKER)]
+        after  = original[original.index(END_MARKER):]
+        html   = before + "\n" + new_section + "\n  " + after
+        # 날짜 메타 업데이트
+        import re
+        html = re.sub(
+            r'(CONFIDENTIAL\s*·\s*)[\d\-]+ [\d:]+ 기준',
+            f'\\g<1>{generated_at} 기준',
+            html
+        )
+    else:
+        # ── fallback: 전체 재생성
+        logger.warning("[Dashboard] 마커 없음 — 전체 재생성")
+        html = build_dashboard_html(signals, generated_at, drafts_data=drafts_data)
+
     with open(path, "w", encoding="utf-8") as f:
         f.write(html)
-    logger.info(f"[Dashboard] 저장 완료 → {path}")
+    logger.info(f"[Dashboard] 업데이트 완료 → {path} ({generated_at})")
     return path
+
+
+def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
+    """Daily 탭 내부 콘텐츠만 생성 (메트릭 카드 + Exec Summary + 시그널 카드)."""
+    reds    = [s for s in signals if s.action_flag == "red"]
+    yellows = [s for s in signals if s.action_flag == "yellow"]
+    whites  = [s for s in signals if s.action_flag == "white"]
+    total   = len(signals)
+
+    try:
+        from collector import load_portfolios
+        total_portfolio = len(load_portfolios("portfolio.yaml"))
+    except Exception:
+        total_portfolio = 14
+    companies = len(set(s.portfolio_name for s in signals))
+
+    # ── Executive Summary
+    if reds:
+        exec_lines = [f"🔴 {s.portfolio_name} — {s.summary_ko[:45]}…" for s in reds[:3]]
+        exec_lines += [f"🟡 {s.portfolio_name} — {s.summary_ko[:40]}…" for s in yellows[:2]]
+        exec_bg = "#fdf5f5"; exec_border = "#e74c3c"; exec_color = "#c0392b"
+    elif yellows:
+        exec_lines = [f"🟡 {s.portfolio_name} — {s.summary_ko[:40]}…" for s in yellows[:4]]
+        exec_bg = "#fdfbf0"; exec_border = "#f39c12"; exec_color = "#d68910"
+    else:
+        exec_lines = ["⚪ 오늘 포트폴리오 전반 특이사항 없음 — 정기모니터링 유지"]
+        exec_bg = "#f0fdf4"; exec_border = "#27ae60"; exec_color = "#27ae60"
+    exec_html = "".join(
+        f'<div style="margin-bottom:4px">{line}</div>' for line in exec_lines
+    )
+
+    # ── 시그널 카드 (flag별 배너 + 회사별 묶음)
+    from collections import defaultdict as _dd
+    _DISPLAY_PRIORITY = {"업스테이지": 1, "비엠스마일": 2, "컬리": 3, "에버온": 4}
+
+    def _flag_banner(flag, label, sub, count):
+        colors = {"red": "#c0392b,#a93226", "yellow": "#d68910,#b7770d", "white": "#868e96,#6c757d"}
+        grad = colors.get(flag, "#868e96,#6c757d")
+        return (
+            f'<div class="flag-banner {flag}">'
+            f'<div><span class="fb-label">{label}</span>'
+            f'<span class="fb-sub">{sub}</span></div>'
+            f'<span class="fb-pill">{count}건</span></div>'
+        )
+
+    red_co: dict = _dd(list)
+    yellow_co: dict = _dd(list)
+    for s in signals:
+        if s.action_flag == "red":   red_co[s.portfolio_name].append(s)
+        elif s.action_flag == "yellow": yellow_co[s.portfolio_name].append(s)
+
+    def _sort_co(d):
+        return sorted(d.items(), key=lambda kv: (_DISPLAY_PRIORITY.get(kv[0], 99), kv[0]))
+
+    cards_html = ""
+    if red_co:
+        cards_html += _flag_banner("red", "🔴 즉시검토", "Immediate Review", len(reds))
+        for co, sigs in _sort_co(red_co):
+            cards_html += _company_section_html(co, sorted(sigs, key=lambda x: 0 if x.action_flag == "red" else 1))
+    if yellow_co:
+        cards_html += _flag_banner("yellow", "🟡 동향주시", "Watch & Report", len(yellows))
+        for co, sigs in _sort_co(yellow_co):
+            cards_html += _company_section_html(co, sigs)
+    if not cards_html:
+        cards_html = '<div style="text-align:center;padding:24px;color:#adb5bd;font-size:13px">오늘 검토 항목 없음 · No items today</div>'
+
+    return f"""
+    <!-- 지표 카드: 3개 플래그 -->
+    <table width="100%" cellspacing="0" cellpadding="0"
+           style="margin:14px 0 10px;border-collapse:separate;border-spacing:8px 0">
+      <tr>
+        <td style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+            text-align:center;border-top:3px solid #e74c3c;
+            box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#c0392b">{len(reds)}</div>
+          <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">🔴 즉시검토<br><span style="font-size:9px;color:#e0aaaa">Immediate Review</span></div>
+        </td>
+        <td style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+            text-align:center;border-top:3px solid #f39c12;
+            box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">{len(yellows)}</div>
+          <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">🟡 동향주시<br><span style="font-size:9px;color:#d4b96a">Watch & Report</span></div>
+        </td>
+        <td style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+            text-align:center;border-top:3px solid #adb5bd;
+            box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">{len(whites)}</div>
+          <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">⚪ 정기모니터링<br><span style="font-size:9px">참고기사 CSV 첨부</span></div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- 모니터링 기업 -->
+    <div style="background:#f0f4f8;border-radius:10px;padding:10px 16px;margin-bottom:16px;
+                display:flex;align-items:center;justify-content:space-between;
+                border:1px solid #dde3ea">
+      <div style="font-size:11px;color:#6c757d;font-weight:600;letter-spacing:.3px">
+        📡 오늘 시그널 감지 기업
+      </div>
+      <div style="display:flex;align-items:baseline;gap:4px">
+        <span style="font-size:22px;font-weight:800;color:#1a1a2e;line-height:1">{companies}</span>
+        <span style="font-size:12px;color:#adb5bd;font-weight:500">/ {total_portfolio}개사</span>
+      </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="exec-box" style="background:{exec_bg};border-color:{exec_border};">
+      <span class="e-label" style="color:{exec_color};">Executive Summary</span>
+      <div class="e-main" style="color:#1a1a2e;line-height:2">
+        {exec_html}
+      </div>
+    </div>
+
+    <!-- 모니터링 포인트 & 권고 액션 -->
+    <div class="section-header">
+      <span>📋 모니터링 포인트 &amp; 권고 액션 &nbsp;|&nbsp; Monitoring &amp; Actions</span>
+    </div>
+
+    {cards_html}
+"""
 
 
 # =============================================================================
