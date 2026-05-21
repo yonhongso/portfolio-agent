@@ -197,7 +197,7 @@ class EmailSender:
             with smtplib.SMTP(self.host, self.port) as smtp:
                 smtp.starttls()
                 smtp.login(self.user, self.password)
-                smtp.sendmail(self.from_addr, to, msg.as_string())
+                smtp.send_message(msg)
             logger.info(f"[Email] 발송 완료 → {to}")
             return True
         except Exception as e:
@@ -1810,35 +1810,13 @@ class Dispatcher:
             yellow_count=len(yellows),
         )
 
-        # 🔴 시그널별 커뮤니케이션 초안 생성 (Groq)
-        drafts_data = []
-        for s in reds:
-            msg_exec, msg_portfolio = _draft_contact_messages(s)
-            drafts_data.append({
-                "portfolio_name": s.portfolio_name,
-                "signal_type":    s.signal_type,
-                "summary_ko":     s.summary_ko,
-                "msg_exec":       msg_exec,
-                "msg_portfolio":  msg_portfolio,
-            })
+        html = build_daily_html(signals, date_str)
 
-        html = build_daily_html(signals, date_str, drafts_data=drafts_data or None)
-
-        # dashboard.html에 커뮤니케이션 초안 탭 포함하여 저장
-        save_dashboard(signals, drafts_data=drafts_data or None)
-
-        attachments = []
-
-        # PDF 첨부 (경영층 보고용)
-        pdf_data = build_daily_pdf(signals, date_str)
-        if pdf_data:
-            attachments.append((
-                f"Portfolio_Report_{date_str}.pdf",
-                pdf_data,
-                "application/pdf",
-            ))
+        # dashboard.html 저장
+        save_dashboard(signals)
 
         # ⚪ CSV 첨부
+        attachments = []
         if whites:
             attachments.append((
                 f"참고기사_{date_str}.csv",
