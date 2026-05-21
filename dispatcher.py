@@ -2632,13 +2632,10 @@ def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at:
     _DISPLAY_PRIORITY = {"업스테이지": 1, "비엠스마일": 2, "컬리": 3, "에버온": 4}
 
     def _flag_banner(flag, label, sub, count):
-        colors = {"red": "#c0392b,#a93226", "yellow": "#d68910,#b7770d", "white": "#868e96,#6c757d"}
-        grad = colors.get(flag, "#868e96,#6c757d")
         return (
-            f'<div class="flag-banner {flag}">'
-            f'<div><span class="fb-label">{label}</span>'
-            f'<span class="fb-sub">{sub}</span></div>'
-            f'<span class="fb-pill">{count}건</span></div>'
+            f'<div class="flag-section {flag}">'
+            f'{label} <span style="font-size:10px;font-weight:500;opacity:.7">{sub}</span>'
+            f'<span class="count-pill">{count}건</span></div>'
         )
 
     red_co: dict = _dd(list)
