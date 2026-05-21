@@ -1,0 +1,20 @@
+# Portfolio Intelligence Monitoring Agent
+# 설치: pip install -r requirements.txt
+
+# 핵심 수집
+feedparser>=6.0.10
+requests>=2.31.0
+pyyaml>=6.0.1
+
+# AI 분류
+anthropic>=0.28.0
+
+# 스케줄 / 유틸
+schedule>=1.2.1
+python-dotenv>=1.0.0
+
+# 이메일
+# (smtplib은 Python 표준 라이브러리 — 별도 설치 불필요)
+
+# 텔레그램
+python-telegram-bot>=20.0

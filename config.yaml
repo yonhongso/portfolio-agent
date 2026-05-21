@@ -1,0 +1,273 @@
+# =============================================================================
+# config.yaml — 포트폴리오 인텔리전스 에이전트 · 운영 설정
+# =============================================================================
+# ★ Claude API 사용량 최적화 설계 원칙
+#   1. 규칙 기반 1차 필터로 LLM 호출 대상 최소화
+#   2. 배치 처리로 호출 횟수 절감
+#   3. 모델 계층화: Haiku(빠른 판단) → Sonnet(심층 분석)
+#   4. 캐시·중복 제거로 재분류 방지
+# =============================================================================
+
+version: "1.0"
+last_updated: "2026-05-16"
+
+# =============================================================================
+# 1. LLM 설정 — Claude API 효율화 핵심
+# =============================================================================
+llm:
+
+  # --- 모델 계층 ---
+  # Haiku : 저비용·고속. 1차 관련성 판단, 중복 필터, 단순 분류에 사용.
+  # Sonnet: 중간 비용. 3축 분류(Sentiment/Signal/Action) 메인 분류기.
+  # Opus  : 고비용. 월간 종합 리포트 생성 등 고품질 요약에만 선택적 사용.
+  models:
+    triage:  "claude-haiku-4-5-20251001"     # 관련성 판단 · 중복 감지
+    classify: "claude-sonnet-4-6"            # 3축 분류 메인
+    report:   "claude-sonnet-4-6"            # 일간·주간 리포트 생성
+    monthly:  "claude-opus-4-6"              # 월간 심층 리포트 (월 1회)
+
+  # --- 배치 처리 (호출 횟수 ↓) ---
+  batch:
+    triage_size: 20      # Haiku 1회 호출에 기사 최대 20건 묶어서 관련성 판단
+    classify_size: 5     # Sonnet 1회 호출에 기사 최대 5건 묶어서 3축 분류
+    # ※ 너무 크면 컨텍스트 품질 저하. 위 값이 실험적 최적값.
+
+  # --- 토큰 한도 ---
+  max_tokens:
+    triage: 512          # 관련성 판단은 JSON 응답만 → 짧게
+    classify: 1024       # 분류 결과 + 한줄 요약
+    report_daily: 2048   # 일간 브리핑 전체
+    report_weekly: 3000  # 주간 리포트
+    report_monthly: 4096 # 월간 심층 리포트
+
+  # --- 기타 ---
+  temperature: 0         # 분류 일관성을 위해 0 고정
+  timeout_sec: 30        # API 타임아웃
+
+  # --- 캐시 설정 (동일 기사 재분류 방지) ---
+  cache:
+    enabled: true
+    ttl_hours: 48        # 48시간 내 동일 URL·해시 → LLM 재호출 없이 캐시 반환
+    backend: "sqlite"    # sqlite | redis (경량 운영: sqlite 권장)
+    db_path: "data/cache.db"
+
+# =============================================================================
+# 2. 1차 필터 — LLM 호출 전 규칙 기반 노이즈 제거
+# =============================================================================
+# ★ 여기서 걸러낸 기사는 LLM을 전혀 호출하지 않음 → 비용 절감 핵심
+pre_filter:
+
+  # 최소 키워드 매칭 점수 (0.0~1.0)
+  # primary 키워드 포함 시 1.0 / secondary 0.5 / 미포함 0.0
+  min_relevance_score: 0.5   # 0.5 미만 → 즉시 폐기
+
+  # 중복 제거
+  dedup:
+    enabled: true
+    method: "url+title_hash"  # URL 또는 제목 해시가 동일하면 중복으로 처리
+    window_hours: 24          # 24시간 내 중복 차단
+
+  # 광고·PR 필터 (제목에 아래 패턴 포함 시 제외)
+  ad_patterns:
+    - "\\[광고\\]"
+    - "\\[PR\\]"
+    - "Sponsored"
+    - "Press Release"         # 자사 보도자료는 별도 소스로 처리
+
+  # 최소 본문 길이 (너무 짧은 기사는 LLM에 보내도 의미 없음)
+  min_content_length: 100    # 100자 미만 폐기
+
+  # 수집 후 LLM 전달 예상 비율 목표: 수집량의 ~30% 이하
+  # (규칙 필터로 70% 이상 제거 목표)
+
+# =============================================================================
+# 3. 수집 스케줄
+# =============================================================================
+collection:
+  schedules:
+    dart:
+      interval_minutes: 30   # 실시간에 가깝게
+      enabled: true
+    google_news:
+      interval_minutes: 60
+      enabled: true
+    linkedin:
+      interval_hours: 6
+      enabled: true
+    crunchbase:
+      interval_hours: 6
+      enabled: true
+    pitchbook:
+      interval_hours: 6
+      enabled: true
+    twitter_x:
+      interval_hours: 2
+      enabled: true
+    sec:
+      interval_hours: 4
+      enabled: true
+    bloomberg:
+      interval_hours: 3
+      enabled: false           # Bloomberg API 계약 후 활성화
+
+  # 수집 재시도 설정
+  retry:
+    max_attempts: 3
+    backoff_seconds: 60
+
+# =============================================================================
+# 4. 배포 스케줄 및 수신자
+# =============================================================================
+dispatch:
+
+  telegram:
+    enabled: true
+    trigger: "realtime"          # 🔴 플래그 즉시 발송
+    flags: ["red"]
+    bot_token: "${TELEGRAM_BOT_TOKEN}"     # 환경변수로 관리
+    chat_id: "${TELEGRAM_CHAT_ID}"
+    # 야간 무음 처리 (선택)
+    quiet_hours:
+      enabled: true
+      start: "23:00"             # 23시~07시 사이 🔴도 큐에 쌓았다가
+      end: "07:00"               #   07시에 일괄 발송 (긴급 제외)
+      timezone: "Asia/Seoul"
+      bypass_keywords:           # 이 키워드 포함 시 야간에도 즉시 발송
+        - "파산"
+        - "상장폐지"
+        - "IPO"
+        - "M&A"
+        - "acquisition"
+
+  email_daily:
+    enabled: true
+    cron: "0 8 * * *"            # 매일 오전 8시
+    timezone: "Asia/Seoul"
+    flags: ["red", "yellow"]     # 🔴 + 🟡
+    include_white_as_attachment: true   # ⚪ 참고 항목은 본문 제외, 첨부 CSV
+    subject_template: "[포트폴리오 Daily] {date} | 🔴 {red_count}건 · 🟡 {yellow_count}건"
+    recipients:
+      - "yonhongso@gmail.com"
+ 
+
+  email_weekly:
+    enabled: true
+    cron: "0 9 * * 1"            # 매주 월요일 오전 9시
+    timezone: "Asia/Seoul"
+    flags: ["red", "yellow", "white"]
+    include_heatmap: true        # 신호 유형별 히트맵 HTML 포함
+    subject_template: "[포트폴리오 Weekly] {week_range} 주간 동향"
+    recipients:
+      - "yonhongso@gmail.com"
+    
+
+  email_monthly:
+    enabled: true
+    cron: "0 9 1 * *"            # 매월 1일 오전 9시
+    timezone: "Asia/Seoul"
+    model_override: "claude-opus-4-6"    # 월간은 Opus로 고품질 생성
+    subject_template: "[포트폴리오 Monthly] {year}년 {month}월 인텔리전스 리포트"
+    recipients:
+      - "yonhongso@gmail.com"
+  
+
+  # 🔴 경영층 즉시 보고 — 🔴 시그널 발생 시 자동 발송
+  executive_alert:
+    enabled: true                # false로 변경하면 비활성화
+    subject_template: "[긴급] 포트폴리오 즉시검토 이슈"
+    recipients:
+      - "yonhongso@gmail.com"       
+      - "coo@company.com"        # COO (필요 시 추가)
+      # 본인 이메일로 먼저 테스트 후 실제 경영층으로 변경 권장
+
+  # 이메일 발송 설정
+  email_provider:
+    type: "smtp"                 # smtp | sendgrid
+    host: "${SMTP_HOST}"
+    port: 587
+    user: "${SMTP_USER}"
+    password: "${SMTP_PASSWORD}"
+    from_name: "포트폴리오 인텔리전스"
+    from_address: "portfolio-agent@company.com"
+
+# =============================================================================
+# 5. 분류 임계값
+# =============================================================================
+classification:
+
+  # Action Flag 판정 규칙
+  # LLM이 아래 기준을 참고하여 최종 판정 (프롬프트에 주입됨)
+  action_flag_rules:
+    red:   # 🔴 즉시 검토
+      conditions:
+        - "M&A / 인수합병 / 매각 논의"
+        - "IPO / 상장 / SPAC 관련 공식 발표"
+        - "CEO·CFO·CTO 등 C-레벨 사임·교체"
+        - "소송 제기 / 규제 기관 제재"
+        - "파산·부도·구조조정 징후"
+        - "신규 펀딩 라운드 클로징 공식 확인"
+        - "당사 지분 희석 가능성 있는 이벤트"
+    yellow:  # 🟡 모니터링
+      conditions:
+        - "펀딩 협상 진행 중 (미확정)"
+        - "임원급(VP·Director) 인사 이동"
+        - "전략적 파트너십 MOU 체결"
+        - "신제품 출시 / 주요 기술 발표"
+        - "언론 부정 보도 (단발성)"
+        - "경쟁사 주요 이벤트 (간접 영향)"
+    white:   # ⚪ 참고
+      conditions:
+        - "일반 업계 동향"
+        - "마케팅·브랜딩 활동"
+        - "채용 공고 (단순 성장 지표)"
+        - "수상·인증 등 긍정적 PR"
+
+  # priority별 Action Flag 임계값 보정
+  priority_adjustment:
+    high:
+      # high 우선순위 포트폴리오사: yellow 기준으로도 🔴 가능
+      yellow_to_red_boost: true
+    low:
+      # low 우선순위: 명백한 red 조건만 🔴, 나머지 🟡 이하
+      red_threshold_strict: true
+
+# =============================================================================
+# 6. 데이터 저장
+# =============================================================================
+storage:
+  backend: "sqlite"              # sqlite | postgresql
+  db_path: "data/portfolio_intel.db"
+  # postgresql 사용 시:
+  # connection_string: "${DATABASE_URL}"
+
+  retention:
+    raw_articles_days: 90        # 원문 기사 보관 기간
+    classified_signals_days: 365 # 분류 결과 보관 기간
+    reports_days: 730            # 발송된 리포트 보관 기간
+
+# =============================================================================
+# 7. 로깅 및 모니터링
+# =============================================================================
+logging:
+  level: "INFO"                  # DEBUG | INFO | WARNING | ERROR
+  file: "logs/agent.log"
+  rotation: "daily"
+  retention_days: 30
+
+  # Claude API 사용량 트래킹 (비용 모니터링)
+  llm_usage_tracking:
+    enabled: true
+    log_file: "logs/llm_usage.jsonl"   # 모델·토큰·비용 기록
+    alert_daily_usd: 5.0               # 일일 $5 초과 시 운영자에게 알림
+
+# =============================================================================
+# [환경변수 목록] .env 파일에 설정
+# =============================================================================
+# TELEGRAM_BOT_TOKEN=...
+# TELEGRAM_CHAT_ID=...
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=...
+# SMTP_PASSWORD=...
+# ANTHROPIC_API_KEY=...
+# DATABASE_URL=postgresql://...  (sqlite 사용 시 불필요)

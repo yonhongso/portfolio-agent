@@ -1,0 +1,536 @@
+version: "1.0"
+last_updated: "2026-05-16"
+
+defaults:
+  sources:
+    dart: false
+    google_news: true
+    linkedin: true
+    crunchbase: true
+    twitter_x: false
+  priority: medium
+  alert_language: "ko"
+  active: true
+
+portfolios:
+
+  - id: kurly
+    name: "컬리"
+    name_en: "Kurly"
+    sector: "E-commerce / 신선식품"
+    stage: "Pre-IPO"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: 5.0
+    investment_date: "2023-01-01"
+    board_seat: false
+
+    keywords:
+      primary:
+        - "컬리"
+        - "마켓컬리"
+        - "Kurly"
+      secondary:
+        - "김슬아"
+        - "컬리 IPO"
+        - "컬리 실적"
+        - "컬리 네이버"
+        - "Kurly IPO"
+      exclude:
+        - "컬리 레시피"
+        - "컬리 쿠폰"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: false
+      twitter_x: false
+
+    priority: high
+    display_priority: 3
+    context_memo: >
+      신선식품 새벽배송 대표 기업. 대표이사 김슬아.
+      IPO 재추진 중 (네이버와 전략적 파트너십 관계). Exit 타임라인 직결.
+      IPO 타임라인 변동·네이버 지분 변동·밸류에이션 협상 모두 Red 수준 모니터링.
+      경쟁사는 쿠팡, SSG닷컴, 오아시스마켓.
+
+    active: true
+  # ────────────────────────────────────────────────
+  # 국내 포트폴리오 (추가)
+  # ────────────────────────────────────────────────
+
+  - id: portone
+    name: "포트원"
+    name_en: "PortOne"
+    sector: "FinTech / 결제 인프라"
+    stage: "Series C+"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "포트원"
+        - "PortOne"
+        - "아임포트"
+      secondary:
+        - "신다니엘"
+        - "포트원 결제"
+        - "포트원 IPO"
+        - "포트원 투자"
+      exclude:
+        - "포트원 광고"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: true
+      twitter_x: false
+
+    priority: high
+    context_memo: >
+      글로벌 결제 인프라 플랫폼. 구 아임포트에서 리브랜딩.
+      공동대표 신다니엘(Daniel Shin). 국내외 이커머스 결제 연동 SaaS.
+      글로벌 확장 중이며 IPO 가능성 주시 필요.
+      경쟁사: 토스페이먼츠, KG이니시스, Stripe(글로벌).
+
+    active: true
+
+  - id: mymusictaste
+    name: "마이뮤직테이스트"
+    name_en: "MyMusicTaste"
+    sector: "Entertainment / K-POP 콘서트 플랫폼"
+    stage: "Series B"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "마이뮤직테이스트"
+        - "MyMusicTaste"
+      secondary:
+        - "성종현"
+        - "K-POP 콘서트"
+        - "마이뮤직테이스트 투자"
+      exclude:
+        - "공연 티켓 일반"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: true
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      팬 수요 기반 글로벌 K-POP 콘서트 기획 플랫폼. 대표이사 성종현.
+      SoftBank Ventures, Formation Group 등 글로벌 VC 투자 유치.
+      30개국 이상 서비스 운영. 한류 콘텐츠 글로벌 수요 성장과 연동.
+
+    active: true
+
+  - id: catalyster
+    name: "카탈리스터"
+    name_en: "Catalyster"
+    sector: "IT 서비스 / 플랫폼 (구 메타버스)"
+    stage: "자회사 (컴투스 그룹)"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "카탈리스터"
+        - "Catalyster"
+        - "컴투버스"
+      secondary:
+        - "이경일"
+        - "컴투스 자회사"
+        - "카탈리스터 사업"
+      exclude:
+        - "컴투스 게임"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: false
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      컴투스 자회사. 구 컴투버스에서 2025년 3월 카탈리스터로 사명 변경.
+      대표이사 이경일. 메타버스에서 경영 컨설팅·사업 서비스로 피벗 중.
+      사업 방향 전환 모니터링 필요.
+
+    active: true
+
+  - id: bemsmile
+    name: "비엠스마일"
+    name_en: "BeMSmile"
+    sector: "라이프스타일 / IP 브랜드·뷰티"
+    stage: "Early Stage"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "비엠스마일"
+        - "BeMSmile"
+        - "이주광"
+        - "페스룸"
+        - "위글위글"
+      secondary:
+        - "PETHROOM"
+        - "Wiggle Wiggle"
+        - "비엠스마일 투자"
+        - "비엠스마일 브랜드"
+        - "인플루언서 화장품"
+      exclude: []
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: false
+      twitter_x: false
+
+    priority: high
+    display_priority: 2
+    context_memo: >
+      대표이사 이주광 (APR 공동창업자 출신). 사장님 관심도 높은 포트폴리오.
+      "페스룸(PETHROOM)", "위글위글(Wiggle Wiggle)" 등 라이프스타일·IP 브랜드 및
+      인플루언서 기반 화장품 사업 영위. 브랜드 평판·SNS 바이럴·대표 동향 집중 모니터링.
+      대표 이주광 개인 관련 인터뷰·경영 발언도 트래킹 대상.
+
+    active: true
+
+  - id: chabot_mobility
+    name: "차봇모빌리티"
+    name_en: "Chabot Mobility"
+    sector: "모빌리티 / 자동차 관리 플랫폼"
+    stage: "Series C"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "차봇모빌리티"
+        - "차봇"
+        - "Chabot"
+      secondary:
+        - "강성근"
+        - "차봇 투자"
+        - "차봇 구독"
+        - "차봇 IPO"
+      exclude:
+        - "챗봇"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: false
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      자동차 관리·구독 서비스 플랫폼. 대표이사 강성근. 2016년 설립.
+      시리즈C 투자 120억 유치 (한화투자증권, 현대투자파트너스 등), 누적 226억.
+      세차 구독 등 차량관리 서비스 확장 중.
+
+    active: true
+
+  - id: everon
+    name: "에버온"
+    name_en: "Everon"
+    sector: "모빌리티 / EV 충전 인프라"
+    stage: "Series C"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "에버온"
+        - "EVERON"
+      secondary:
+        - "유동수"
+        - "에버온 충전"
+        - "에버온 투자"
+        - "에버온 IPO"
+        - "전기차 충전 에버온"
+      exclude:
+        - "에버온 렌터카"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: false
+      twitter_x: false
+
+    priority: high
+    display_priority: 4
+    context_memo: >
+      전국 4만6천기 이상 급속·완속 EV 충전기 운영. 대표이사 유동수.
+      2012년 설립, 구 LG CNS 자회사. 누적 500억 투자 유치 (KDB산업은행 등).
+      AI 기반 알뜰ON AI 충전 서비스 출시. 상장 임박 — Exit 타임라인 직결.
+      수요예측·정책 변화·상장일 관련 모든 시그널 최우선 처리.
+
+    active: true
+
+  - id: upstage
+    name: "업스테이지"
+    name_en: "Upstage"
+    sector: "AI / LLM·엔터프라이즈 AI"
+    stage: "Series B"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "업스테이지"
+        - "Upstage"
+        - "Solar LLM"
+      secondary:
+        - "김성훈"
+        - "업스테이지 투자"
+        - "Solar Pro"
+        - "업스테이지 IPO"
+      exclude:
+        - "업스테이지 게임"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: true
+      crunchbase: true
+      twitter_x: false
+
+    priority: high
+    display_priority: 1
+    context_memo: >
+      한국 대표 AI 스타트업. 대표이사 김성훈 (전 홍콩과기대 교수, 전 네이버 AI).
+      자체 LLM Solar 시리즈 개발. 시리즈C 참여 (당사 직접 투자).
+      시리즈B 브릿지 620억 유치 (Amazon, AMD, KDB). 기업가치 7,400억 원.
+      2027년 BEP 목표. 추가 펀딩·기업 고객 계약·해외 파트너십 핵심 모니터링 대상.
+
+    active: true
+
+  - id: blockodyssey
+    name: "블록오디세이"
+    name_en: "Block Odyssey"
+    sector: "블록체인 / 엔터프라이즈 금융 인프라"
+    stage: "Series A"
+    country: "KR"
+    currency: "KRW"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "블록오디세이"
+        - "Block Odyssey"
+      secondary:
+        - "연창학"
+        - "블록오디세이 투자"
+        - "토큰증권"
+        - "자산 토큰화"
+      exclude: []
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: false
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      엔터프라이즈 블록체인 기술 기업. 대표이사 연창학.
+      2018년 설립. 시리즈A 360억 유치 (신한·KB·하나금융그룹, SK네트웍스).
+      토큰증권(STO), 자산 토큰화, NFT 분야 특화.
+
+    active: true
+
+  # ────────────────────────────────────────────────
+  # 해외 포트폴리오 (추가)
+  # ────────────────────────────────────────────────
+
+  - id: sabanto
+    name: "사반토"
+    name_en: "Sabanto"
+    sector: "AgTech / 자율주행 농업 기계"
+    stage: "Series A"
+    country: "US"
+    currency: "USD"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "Sabanto"
+        - "사반토"
+      secondary:
+        - "Craig Rupp"
+        - "autonomous tractor"
+        - "autonomous farming"
+        - "Sabanto funding"
+      exclude: []
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: true
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      자율주행 트랙터 키트 개발 AgTech 스타트업. 창업자·CEO Craig Rupp.
+      2018년 설립. 누적 $22M+ 투자 유치.
+      기존 농기계에 4시간 내 장착 가능한 자율주행 키트 방식으로 피벗.
+      2025년 Montana 밀농장 파트너십 성과 발표.
+
+    active: true
+
+  - id: standard_ai
+    name: "스탠다드AI"
+    name_en: "Standard AI"
+    sector: "AI / 리테일 비전 분석"
+    stage: "Series C"
+    country: "US"
+    currency: "USD"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "Standard AI"
+        - "스탠다드AI"
+      secondary:
+        - "Angie Westbrock"
+        - "Jordan Fisher"
+        - "Standard AI retail"
+        - "Standard AI funding"
+        - "vision analytics retail"
+      exclude: []
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: true
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      리테일 비전 AI 플랫폼. CEO Angie Westbrock (전 COO), 공동창업자 Jordan Fisher(회장).
+      2017년 설립. 자율 계산대 → 비전 분석 플랫폼으로 전략 전환.
+      VISION 플랫폼으로 오프라인 리테일 데이터 분석 서비스 제공.
+
+    active: true
+
+  - id: source_ag
+    name: "소스에이지"
+    name_en: "Source.ag"
+    sector: "AgTech / 온실 AI 소프트웨어"
+    stage: "Series B"
+    country: "NL"
+    currency: "EUR"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "Source.ag"
+        - "소스에이지"
+      secondary:
+        - "Rien Kamman"
+        - "controlled environment agriculture"
+        - "greenhouse AI"
+        - "Source.ag funding"
+      exclude: []
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: true
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      온실 제어환경농업(CEA) AI 소프트웨어 플랫폼. CEO Rien Kamman, CCO Ernst van Bruggen.
+      네덜란드 기반. 2020년 설립. 시리즈B $17.5M 유치 (Astanor Ventures 리드), 총 $60M+.
+      18개국 300개 온실·2,500ha 적용. 토마토·파프리카·오이 4천만명 공급.
+
+    active: true
+
+  - id: lvis
+    name: "엘비스"
+    name_en: "LVIS"
+    sector: "디지털 헬스 / 뇌신경 분석 AI"
+    stage: "Series B"
+    country: "US"
+    currency: "USD"
+    our_stake_pct: null
+    investment_date: null
+    board_seat: false
+
+    keywords:
+      primary:
+        - "LVIS"
+        - "엘비스"
+        - "LVIS Corp"
+      secondary:
+        - "Jin Hyung Lee"
+        - "이진형"
+        - "LVIS brain"
+        - "LVIS neurology"
+        - "LVIS funding"
+      exclude:
+        - "LVIS catheter"
+        - "LVIS stent"
+
+    sources:
+      dart: false
+      google_news: true
+      linkedin: false
+      crunchbase: true
+      twitter_x: false
+
+    priority: medium
+    context_memo: >
+      뇌신경 네트워크 분석 AI 플랫폼. 창업자 이진형 (Jin Hyung Lee, 스탠퍼드 교수).
+      미국 Palo Alto 본사, 서울 강남 오피스. 2013년 설립.
+      누적 $73.8M 투자 유치 (LG전자, InterVest, DSC인베스트먼트 등).
+      SK네트웍스 투자. 뇌질환 진단·치료 타깃.
+
+    active: true

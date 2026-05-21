@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+         background: #edf0f4; color: #1a1a2e; -webkit-font-smoothing: antialiased; }
+  .wrapper { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+
+  /* ── 헤더 */
+  .header {
+    background: linear-gradient(150deg, #0d1b2a 0%, #1a2744 55%, #16213e 100%);
+    border-radius: 12px 12px 0 0;
+    padding: 28px 28px 22px;
+    position: relative; overflow: hidden;
+  }
+  .header::after {
+    content: ''; position: absolute; top: -40px; right: -30px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: rgba(232,213,183,0.04); pointer-events: none;
+  }
+  .header-badge {
+    display: inline-block;
+    background: rgba(232,213,183,0.12);
+    color: #e8d5b7; font-size: 9px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+    border: 1px solid rgba(232,213,183,0.25);
+  }
+  .header h1 {
+    color: #ffffff; font-size: 20px; font-weight: 700;
+    letter-spacing: -0.4px; margin-bottom: 6px; line-height: 1.2;
+  }
+  .header .sub {
+    color: rgba(255,255,255,0.45); font-size: 12px; letter-spacing: 0.2px;
+  }
+  .header-strip {
+    background: rgba(0,0,0,0.25);
+    border-radius: 0 0 12px 12px;
+    padding: 9px 28px;
+    display: flex; gap: 20px; align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .strip-item { font-size: 10px; color: rgba(255,255,255,0.4);
+                letter-spacing: 0.3px; text-transform: uppercase; }
+  .strip-item.hi { color: #e8d5b7; font-weight: 600; }
+  .strip-sep { width: 1px; height: 12px; background: rgba(255,255,255,0.1); }
+
+  /* ── 지표 카드 */
+  .metrics { display: flex; gap: 10px; margin: 14px 0 16px; }
+  .metric-card {
+    flex: 1; border-radius: 10px; padding: 16px 10px 14px;
+    text-align: center; background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    border-top: 3px solid #dee2e6;
+  }
+  .metric-card.red    { border-top-color: #e74c3c; }
+  .metric-card.yellow { border-top-color: #f39c12; }
+  .metric-card.white  { border-top-color: #adb5bd; }
+  .metric-card .num  { font-size: 34px; font-weight: 800; line-height: 1; color: #343a40; }
+  .metric-card.red   .num { color: #c0392b; }
+  .metric-card.yellow .num { color: #d68910; }
+  .metric-card.white  .num { color: #868e96; }
+  .metric-card .label { font-size: 10.5px; color: #adb5bd; margin-top: 5px;
+                        line-height: 1.5; font-weight: 500; }
+
+  /* ── 섹션 헤더 */
+  .section-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 0 9px; border-bottom: 1.5px solid #e9ecef; margin-bottom: 12px;
+  }
+  .section-header span { font-size: 12px; font-weight: 700; color: #495057;
+                          letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* ── 시그널 카드 (포털 스타일) */
+  .signal-card {
+    background: #fff; border-radius: 10px; margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden;
+    border: 1px solid #e9ecef;
+  }
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 16px; border-bottom: 1px solid #f1f3f5;
+  }
+  .signal-card.red    .card-header { background: #fdf5f5; }
+  .signal-card.yellow .card-header { background: #fdfbf0; }
+  .signal-card.white  .card-header { background: #f8f9fa; }
+  .card-body { padding: 14px 16px 12px; }
+
+  .company { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+  .badge {
+    font-size: 10px; padding: 3px 10px; border-radius: 20px;
+    font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .badge.red    { background: #fde8e8; color: #c0392b; border: 1px solid #f5c6c6; }
+  .badge.yellow { background: #fef3cd; color: #856404; border: 1px solid #ffe69c; }
+  .badge.white  { background: #f1f3f5; color: #868e96; border: 1px solid #dee2e6; }
+
+  .summary-ko {
+    font-size: 13.5px; color: #212529; line-height: 1.65;
+    margin-bottom: 5px; font-weight: 500;
+  }
+  .summary-en {
+    font-size: 12px; color: #868e96; font-style: italic; line-height: 1.5;
+    margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #e9ecef;
+  }
+  .insight-grid { display: flex; gap: 8px; margin-top: 8px; }
+  .insight-box {
+    flex: 1; border-radius: 6px; padding: 9px 11px; font-size: 12px; line-height: 1.5;
+  }
+  .insight-box .tag {
+    display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase; margin-bottom: 3px;
+  }
+  .insight-box.impl { background: #f8f9fa; color: #495057; }
+  .insight-box.impl .tag { color: #868e96; }
+  .insight-box.action { background: #e8f4fd; color: #154360; }
+  .insight-box.action .tag { color: #2980b9; }
+  .card-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 16px; border-top: 1px solid #f1f3f5; background: #fafafa;
+  }
+  .signal-type-tag {
+    font-size: 10px; background: #f1f3f5; padding: 3px 8px;
+    border-radius: 4px; color: #868e96; font-weight: 500;
+  }
+  .link-btn { font-size: 11px; color: #3498db; text-decoration: none; font-weight: 600; }
+
+  /* ── Executive Summary */
+  .exec-box {
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;
+    border: 1px solid; position: relative; overflow: hidden;
+  }
+  .exec-box .e-label {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 7px; display: block;
+  }
+  .exec-box .e-main { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .exec-box .e-sub  { font-size: 12px; font-style: italic; }
+
+  /* ── 참고 항목 안내 */
+  .white-note {
+    background: #f8f9fa; border-radius: 8px; padding: 13px 16px;
+    font-size: 12px; color: #868e96; text-align: center;
+    border: 1px dashed #dee2e6; margin-top: 4px;
+  }
+
+  /* ── 푸터 */
+  .footer {
+    text-align: center; padding: 22px 0 8px;
+    font-size: 11px; color: #adb5bd; line-height: 1.8;
+    border-top: 1px solid #e9ecef; margin-top: 20px;
+  }
+  .footer b { color: #6c757d; }
+  .conf-tag {
+    display: inline-block; background: #f1f3f5; color: #868e96;
+    font-size: 9px; padding: 2px 8px; border-radius: 3px;
+    letter-spacing: 1px; text-transform: uppercase;
+    border: 1px solid #dee2e6; margin-bottom: 8px;
+  }
+</style>
+
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── 헤더 -->
+  <div class="header">
+    <div class="header-badge">Portfolio Intelligence</div>
+    <h1>Daily Briefing</h1>
+    <div class="sub">2026-05-18 &nbsp;·&nbsp; 2건 분류 &nbsp;·&nbsp; 2개사 모니터링</div>
+  </div>
+  <div class="header-strip">
+    <span class="strip-item hi">사업개발팀 내부용</span>
+    <span class="strip-sep"></span>
+    <span class="strip-item">CONFIDENTIAL</span>
+    <span class="strip-sep"></span>
+    <span class="strip-item">AI-Generated · 투자 판단 시 직접 검토 필요</span>
+  </div>
+
+  <!-- ── 지표 카드 (table 레이아웃 — 균등 너비 보장) -->
+  <table width="100%" cellspacing="0" cellpadding="0" style="margin:14px 0 16px;border-collapse:separate;border-spacing:8px 0">
+    <tr>
+      <td width="33%" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+          text-align:center;border-top:3px solid #e74c3c;
+          box-shadow:0 2px 8px rgba(0,0,0,.06)">
+        <div style="font-size:34px;font-weight:800;line-height:1;color:#c0392b">2</div>
+        <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">즉시검토<br>Urgent Review</div>
+      </td>
+      <td width="33%" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+          text-align:center;border-top:3px solid #f39c12;
+          box-shadow:0 2px 8px rgba(0,0,0,.06)">
+        <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">0</div>
+        <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">모니터링<br>To Watch</div>
+      </td>
+      <td width="34%" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+          text-align:center;border-top:3px solid #adb5bd;
+          box-shadow:0 2px 8px rgba(0,0,0,.06)">
+        <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">0</div>
+        <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">참고<br>Reference</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ── Executive Summary -->
+  <div class="exec-box" style="background:#fdf5f5;border-color:#e74c3c;">
+    <span class="e-label" style="color:#c0392b;">Executive Summary</span>
+    <div class="e-main" style="color:#1a1a2e;">즉시 검토 필요 이슈 2건 — 컬리, 테스트A사 긴급 확인 요망</div>
+    <div class="e-sub" style="color:#868e96;">2 urgent item(s) require immediate attention today.</div>
+  </div>
+
+  <!-- ━━━━ Section 1: 포트폴리오 현황 탭 헤더 ━━━━ -->
+  <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:0;border-collapse:collapse;margin-top:10px">
+    <tr>
+      <td style="background:#f0f4f8;border-radius:10px 10px 0 0;padding:12px 22px 10px;
+                 border-top:3px solid #c0392b;border-left:1px solid #dee2e6;border-right:1px solid #dee2e6">
+        <span style="font-size:14px;font-weight:800;color:#c0392b;letter-spacing:-.2px">
+          📊 포트폴리오 현황
+        </span>
+        <span style="font-size:11px;color:#868e96;margin-left:8px">
+          Monitoring &amp; Actions
+        </span>
+      </td>
+    </tr>
+  </table>
+  <div style="background:#fff;border:1px solid #dee2e6;border-top:none;border-radius:0 0 12px 12px;
+              padding:18px 18px 8px">
+    
+    <div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  border-left:4px solid #e74c3c;padding:8px 14px;
+                  background:#fff;border-radius:0 8px 8px 0;
+                  margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+        <span style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.3px">컬리</span>
+        <div><span style='background:#fde8e8;color:#c0392b;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px'>🔴 1건</span></div>
+      </div>
+      <div style="padding-left:12px">
+        
+    <div class="signal-card red">
+      <div class="card-header">
+        <span class="company">컬리</span>
+        <span class="badge red">🔴 URGENT</span>
+      </div>
+      <div class="card-body">
+        <span style="display:inline-block;background:#f3e5f5;color:#6c3483;font-size:11px;font-weight:700;padding:3px 11px;border-radius:5px;margin-bottom:8px;letter-spacing:.2px">M&A·Exit</span>
+        <p class="summary-ko">컬리가 글로벌 유통기업과 M&A 협상 중이며, 인수 규모는 약 5,000억 원.</p>
+        <p class="summary-en">Kurly is in M&A negotiations with a global retailer, deal est. KRW 500bn.</p>
+        <div class="insight-grid">
+          <div class="insight-box impl">
+            <span class="tag">💡 투자 시사점</span>Exit 기회 또는 희석 위험 즉각 검토 요망
+          </div>
+          <div class="insight-box action">
+            <span class="tag">⚡ 권고 액션</span>오늘 중 법률·회계 자문 연락 / 이사회 보고 준비
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a href="https://example.com/kurly-ma" target="_blank" class="link-btn">원문 보기 →</a>
+      </div>
+    </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  border-left:4px solid #e74c3c;padding:8px 14px;
+                  background:#fff;border-radius:0 8px 8px 0;
+                  margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+        <span style="font-size:15px;font-weight:800;color:#1a1a2e;letter-spacing:-.3px">테스트A사</span>
+        <div><span style='background:#fde8e8;color:#c0392b;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px'>🔴 1건</span></div>
+      </div>
+      <div style="padding-left:12px">
+        
+    <div class="signal-card red">
+      <div class="card-header">
+        <span class="company">테스트A사</span>
+        <span class="badge red">🔴 URGENT</span>
+      </div>
+      <div class="card-body">
+        <span style="display:inline-block;background:#e3f2fd;color:#1565c0;font-size:11px;font-weight:700;padding:3px 11px;border-radius:5px;margin-bottom:8px;letter-spacing:.2px">펀딩·밸류에이션</span>
+        <p class="summary-ko">테스트A사가 하반기 IPO를 공식 선언하고 주관사 선정에 착수. 예상 기업가치 1조 원.</p>
+        <p class="summary-en">Company A announced H2 IPO plans with est. valuation KRW 1tn.</p>
+        <div class="insight-grid">
+          <div class="insight-box impl">
+            <span class="tag">💡 투자 시사점</span>밸류에이션 변동에 따른 지분가치 재평가 필요
+          </div>
+          <div class="insight-box action">
+            <span class="tag">⚡ 권고 액션</span>지분가치 영향 계산 후 투자위원회 보고
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <a href="https://example.com/a-ipo" target="_blank" class="link-btn">원문 보기 →</a>
+      </div>
+    </div>
+      </div>
+    </div>
+    
+  </div>
+
+  
+  <!-- ━━━━ Section 2: 커뮤니케이션 초안 ━━━━ -->
+  <div style="margin-top:32px"></div>
+
+  <!-- 섹션 구분 탭 헤더 -->
+  <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:0;border-collapse:collapse">
+    <tr>
+      <td style="background:#f0f4f8;border-radius:10px 10px 0 0;padding:12px 22px 10px;
+                 border-top:3px solid #8e44ad;border-left:1px solid #dee2e6;border-right:1px solid #dee2e6;
+                 width:auto">
+        <span style="font-size:14px;font-weight:800;color:#6c3483;letter-spacing:-.2px">
+          💬 커뮤니케이션 초안
+        </span>
+        <span style="font-size:11px;color:#9b59b6;margin-left:8px">
+          Communication Drafts — 🔴 Urgent 2건
+        </span>
+      </td>
+    </tr>
+  </table>
+  <div style="background:#fff;border:1px solid #dee2e6;border-top:none;border-radius:0 0 12px 12px;
+              padding:20px 20px 8px">
+    <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
+                padding:10px 16px;margin-bottom:18px;font-size:12.5px;color:#7d4e00">
+      💡 <b>사용 방법:</b> 아래 초안을 복사하여 카카오톡·이메일에 붙여넣기 후 내용을 검토·수정하세요.
+    </div>
+    
+<div style="background:#fff;border-radius:12px;margin-bottom:16px;overflow:hidden;
+            box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e9ecef">
+  <!-- 회사 헤더 -->
+  <div style="background:#f8f9fa;padding:13px 20px;border-bottom:1px solid #e9ecef;
+              display:flex;align-items:center;gap:10px">
+    <div style="width:4px;height:32px;background:#c0392b;border-radius:3px;flex-shrink:0"></div>
+    <div>
+      <div style="font-size:15px;font-weight:800;color:#1a1a2e">컬리</div>
+      <span style="display:inline-block;background:#f3e5f5;color:#6c3483;
+                   font-size:11px;font-weight:700;padding:2px 10px;border-radius:4px;margin-top:3px">M&A·Exit</span>
+    </div>
+  </div>
+  <!-- 시그널 요약 -->
+  <div style="padding:10px 20px;font-size:12.5px;color:#6c757d;border-bottom:1px solid #f0f0f0">
+    컬리가 글로벌 유통기업과 M&A 협상 중이며, 인수 규모는 약 5,000억 원.
+  </div>
+  <!-- 경영층 초안 -->
+  <div style="padding:14px 20px;border-bottom:1px solid #f0f0f0">
+    <div style="font-size:10px;font-weight:700;color:#e67e22;letter-spacing:.8px;
+                text-transform:uppercase;margin-bottom:8px">📤 경영층 문자 초안 (카카오톡/SMS)</div>
+    <div style="background:#fff8f0;border:1.5px solid #f0c080;border-radius:8px;
+                padding:12px 16px;font-size:13px;line-height:1.9;color:#2c3e50">
+      안녕하세요 대표님,<br><br>오늘 오전 컬리의 M&A 관련 보도가 나왔습니다.<br>글로벌 유통사와 약 5,000억 원 규모의 협상이 진행 중인 것으로 알려졌습니다.<br><br>상황을 면밀히 모니터링하며 추가 정보 확인 즉시 보고드리겠습니다.<br><br>사업개발팀 드림
+    </div>
+  </div>
+  <!-- 포트폴리오사 문의 초안 -->
+  <div style="padding:14px 20px">
+    <div style="font-size:10px;font-weight:700;color:#2980b9;letter-spacing:.8px;
+                text-transform:uppercase;margin-bottom:8px">💼 포트폴리오사 문의 초안</div>
+    <div style="background:#f0f8ff;border:1.5px solid #a8d4f5;border-radius:8px;
+                padding:12px 16px;font-size:13px;line-height:1.9;color:#2c3e50">
+      안녕하세요,<br><br>최근 보도된 M&A 관련 동향과 관련하여 현황을 공유해 주실 수 있으신지요?<br>당사 투자관리 차원에서 내부 검토가 필요한 사항이 있어 연락드립니다.<br><br>편하신 시간에 연락 부탁드립니다.<br><br>감사합니다.
+    </div>
+    <div style="font-size:10px;color:#adb5bd;text-align:right;margin-top:6px">
+      ※ AI 생성 초안 — 발송 전 반드시 검토·수정 후 사용하세요.
+    </div>
+  </div>
+</div>
+<div style="background:#fff;border-radius:12px;margin-bottom:16px;overflow:hidden;
+            box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e9ecef">
+  <!-- 회사 헤더 -->
+  <div style="background:#f8f9fa;padding:13px 20px;border-bottom:1px solid #e9ecef;
+              display:flex;align-items:center;gap:10px">
+    <div style="width:4px;height:32px;background:#c0392b;border-radius:3px;flex-shrink:0"></div>
+    <div>
+      <div style="font-size:15px;font-weight:800;color:#1a1a2e">테스트A사</div>
+      <span style="display:inline-block;background:#e3f2fd;color:#1565c0;
+                   font-size:11px;font-weight:700;padding:2px 10px;border-radius:4px;margin-top:3px">펀딩·밸류에이션</span>
+    </div>
+  </div>
+  <!-- 시그널 요약 -->
+  <div style="padding:10px 20px;font-size:12.5px;color:#6c757d;border-bottom:1px solid #f0f0f0">
+    테스트A사가 하반기 IPO를 공식 선언하고 주관사 선정에 착수. 예상 기업가치 1조 원.
+  </div>
+  <!-- 경영층 초안 -->
+  <div style="padding:14px 20px;border-bottom:1px solid #f0f0f0">
+    <div style="font-size:10px;font-weight:700;color:#e67e22;letter-spacing:.8px;
+                text-transform:uppercase;margin-bottom:8px">📤 경영층 문자 초안 (카카오톡/SMS)</div>
+    <div style="background:#fff8f0;border:1.5px solid #f0c080;border-radius:8px;
+                padding:12px 16px;font-size:13px;line-height:1.9;color:#2c3e50">
+      안녕하세요 대표님,<br><br>테스트A사의 하반기 IPO 재추진 공식 발표가 있었습니다.<br>예상 기업가치 1조 원 수준으로 주관사 선정 단계입니다.<br><br>우리 지분 가치 평가 및 Lock-up 조건 검토가 필요합니다.<br><br>사업개발팀 드림
+    </div>
+  </div>
+  <!-- 포트폴리오사 문의 초안 -->
+  <div style="padding:14px 20px">
+    <div style="font-size:10px;font-weight:700;color:#2980b9;letter-spacing:.8px;
+                text-transform:uppercase;margin-bottom:8px">💼 포트폴리오사 문의 초안</div>
+    <div style="background:#f0f8ff;border:1.5px solid #a8d4f5;border-radius:8px;
+                padding:12px 16px;font-size:13px;line-height:1.9;color:#2c3e50">
+      안녕하세요,<br><br>이번 IPO 재추진 관련하여 주요 일정 및 주관사 선정 현황을 공유해 주실 수 있으신지요?<br>당사 내부 보고 일정에 맞춰 검토가 필요한 상황입니다.<br><br>감사합니다.
+    </div>
+    <div style="font-size:10px;color:#adb5bd;text-align:right;margin-top:6px">
+      ※ AI 생성 초안 — 발송 전 반드시 검토·수정 후 사용하세요.
+    </div>
+  </div>
+</div>
+  </div>
+
+  <!-- ── 푸터 -->
+  <div class="footer">
+    <div class="conf-tag">Confidential · Internal Use Only</div><br>
+    <b>Portfolio Intelligence Agent</b> &nbsp;·&nbsp; 사업개발팀<br>
+    본 리포트는 AI 자동 분류 결과입니다. 최종 투자 판단은 반드시 직접 검토 후 결정하시기 바랍니다.<br>
+    This report is AI-generated. All investment decisions require independent validation.
+  </div>
+
+</div>
+</body></html>

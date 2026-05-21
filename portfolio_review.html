@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오 현황 리뷰 — 2026-05-19</title>
+<style>
+  body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #2c3e50; }
+  h1 { font-size: 22px; color: #1A1A2E; border-left: 5px solid #c0392b; padding-left: 14px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #7f8c8d; margin-bottom: 20px; padding-left: 19px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 14px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-kr { background: #2980b9; }
+  .dot-us { background: #27ae60; }
+  .dot-nl { background: #8e44ad; }
+  .dot-high { background: #c0392b; }
+  .dot-med { background: #e67e22; }
+  .note-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 13px; }
+  .note-box strong { color: #856404; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  thead { background: #1A1A2E; color: white; }
+  th { padding: 11px 12px; text-align: left; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  td { padding: 10px 12px; font-size: 12.5px; border-bottom: 1px solid #eef1f5; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8f9ff; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-kr { background: #dbeafe; color: #1d4ed8; }
+  .badge-us { background: #dcfce7; color: #166534; }
+  .badge-nl { background: #f3e8ff; color: #7e22ce; }
+  .badge-high { background: #fee2e2; color: #b91c1c; }
+  .badge-med { background: #fff7ed; color: #c2410c; }
+  .badge-low { background: #f1f5f9; color: #475569; }
+  .missing { color: #e74c3c; font-size: 11px; font-style: italic; }
+  .comp-list { color: #555; font-size: 11.5px; }
+  .num { font-weight: 700; color: #888; font-size: 12px; text-align: center; }
+  .ceo-name { font-weight: 600; }
+  .sector-text { color: #34495e; font-size: 12px; }
+  .stage-text { font-size: 11.5px; color: #7f8c8d; }
+  .company-name { font-weight: 700; font-size: 13px; }
+  .company-sub { font-size: 11px; color: #95a5a6; }
+  .fill-hint { background: #fef9e7; border: 1px dashed #f39c12; border-radius: 4px; padding: 2px 6px; font-size: 11px; color: #d68910; }
+</style>
+</head>
+<body>
+<h1>포트폴리오 현황 리뷰</h1>
+<p class="subtitle">기준일: 2026-05-19 &nbsp;|&nbsp; 총 13개 투자사 &nbsp;|&nbsp; Chloe 검토용</p>
+
+<div class="note-box">
+  <strong>⚠️ 경쟁사 정보 보완 필요:</strong> 아래 표에서 <span class="fill-hint">보완 필요</span> 표시된 항목은 경쟁사 정보가 미기재 상태입니다. 확인 후 알려주시면 portfolio.yaml에 즉시 반영하겠습니다.
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot dot-kr"></div>국내(KR)</div>
+  <div class="legend-item"><div class="dot dot-us"></div>미국(US)</div>
+  <div class="legend-item"><div class="dot dot-nl"></div>네덜란드(NL)</div>
+  <div class="legend-item" style="margin-left:12px;"><div class="dot dot-high"></div>우선순위 High</div>
+  <div class="legend-item"><div class="dot dot-med"></div>우선순위 Medium</div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>회사명</th>
+      <th>대표이사 / CEO</th>
+      <th>섹터</th>
+      <th>스테이지</th>
+      <th>국가</th>
+      <th>우선순위</th>
+      <th>경쟁사</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><div class="company-name">컬리</div><div class="company-sub">Kurly</div></td>
+      <td class="ceo-name">김슬아</td>
+      <td class="sector-text">E-commerce<br>신선식품</td>
+      <td class="stage-text">Pre-IPO</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td class="comp-list">쿠팡, SSG닷컴, 오아시스마켓</td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><div class="company-name">포트원</div><div class="company-sub">PortOne</div></td>
+      <td class="ceo-name">신다니엘<br><span style="font-size:11px;font-weight:400;">(Daniel Shin)</span></td>
+      <td class="sector-text">FinTech<br>결제 인프라</td>
+      <td class="stage-text">Series C+</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td class="comp-list">토스페이먼츠, KG이니시스, Stripe(글로벌)</td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><div class="company-name">업스테이지</div><div class="company-sub">Upstage</div></td>
+      <td class="ceo-name">김성훈</td>
+      <td class="sector-text">AI / LLM<br>엔터프라이즈 AI</td>
+      <td class="stage-text">Series B</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">4</td>
+      <td><div class="company-name">에버온</div><div class="company-sub">Everon</div></td>
+      <td class="ceo-name">유동수</td>
+      <td class="sector-text">모빌리티<br>EV 충전 인프라</td>
+      <td class="stage-text">Series C</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-high">High</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">5</td>
+      <td><div class="company-name">마이뮤직테이스트</div><div class="company-sub">MyMusicTaste</div></td>
+      <td class="ceo-name">성종현</td>
+      <td class="sector-text">Entertainment<br>K-POP 콘서트</td>
+      <td class="stage-text">Series B</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">6</td>
+      <td><div class="company-name">차봇모빌리티</div><div class="company-sub">Chabot Mobility</div></td>
+      <td class="ceo-name">강성근</td>
+      <td class="sector-text">모빌리티<br>자동차 관리 플랫폼</td>
+      <td class="stage-text">Series C</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">7</td>
+      <td><div class="company-name">카탈리스터</div><div class="company-sub">Catalyster</div></td>
+      <td class="ceo-name">이경일</td>
+      <td class="sector-text">IT 서비스<br>(구 메타버스)</td>
+      <td class="stage-text">자회사 (컴투스 그룹)</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">8</td>
+      <td><div class="company-name">비엠스마일</div><div class="company-sub">BeMSmile</div></td>
+      <td class="ceo-name">이주광</td>
+      <td class="sector-text">헬스케어<br>치과·의료</td>
+      <td class="stage-text">Early Stage</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">9</td>
+      <td><div class="company-name">블록오디세이</div><div class="company-sub">Block Odyssey</div></td>
+      <td class="ceo-name">연창학</td>
+      <td class="sector-text">블록체인<br>엔터프라이즈 금융</td>
+      <td class="stage-text">Series A</td>
+      <td><span class="badge badge-kr">KR</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">10</td>
+      <td><div class="company-name">스탠다드AI</div><div class="company-sub">Standard AI</div></td>
+      <td class="ceo-name">Angie Westbrock</td>
+      <td class="sector-text">AI / 리테일<br>비전 분석</td>
+      <td class="stage-text">Series C</td>
+      <td><span class="badge badge-us">US</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">11</td>
+      <td><div class="company-name">LVIS</div><div class="company-sub">엘비스</div></td>
+      <td class="ceo-name">이진형<br><span style="font-size:11px;font-weight:400;">(Jin Hyung Lee, 스탠퍼드)</span></td>
+      <td class="sector-text">디지털 헬스<br>뇌신경 분석 AI</td>
+      <td class="stage-text">Series B</td>
+      <td><span class="badge badge-us">US</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">12</td>
+      <td><div class="company-name">사반토</div><div class="company-sub">Sabanto</div></td>
+      <td class="ceo-name">Craig Rupp</td>
+      <td class="sector-text">AgTech<br>자율주행 농업 기계</td>
+      <td class="stage-text">Series A</td>
+      <td><span class="badge badge-us">US</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+    <tr>
+      <td class="num">13</td>
+      <td><div class="company-name">소스에이지</div><div class="company-sub">Source.ag</div></td>
+      <td class="ceo-name">Rien Kamman</td>
+      <td class="sector-text">AgTech<br>온실 AI 소프트웨어</td>
+      <td class="stage-text">Series B</td>
+      <td><span class="badge badge-nl">NL</span></td>
+      <td><span class="badge badge-med">Medium</span></td>
+      <td><span class="fill-hint">보완 필요</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="margin-top:16px; font-size:12px; color:#95a5a6; text-align:right;">
+  ※ 경쟁사 정보가 있는 회사: 컬리, 포트원 (2개) &nbsp;|&nbsp; 나머지 11개사 보완 필요
+</div>
+</body>
+</html>
