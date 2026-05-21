@@ -5,6 +5,6 @@ git config user.email "yonhongso@gmail.com"
 git config user.name "Chloe"
 git fetch origin
 git add -A
-git commit -m "fix: final" --allow-empty
+git commit -m "fix: weekly/monthly/drafts tabs auto-generate" --allow-empty
 git push origin main --force
 pause
