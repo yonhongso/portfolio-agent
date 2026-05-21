@@ -457,16 +457,21 @@ def _signal_card_html(s: ClassifiedSignal) -> str:
     src_raw = s.source or ""
     src_short = (src_raw.replace("www.", "").split(".")[0][:16] + " →") if src_raw else "원문 →"
 
+    # 출처 표기 정리
+    src_display = "Google News →"
+    if src_raw and "google" not in src_raw.lower():
+        src_display = (src_raw.replace("www.", "").split(".")[0].title()[:18] + " →")
+
     return f"""
     <div class="art-card {flag}">
       <div class="art-top">
         <span class="sig-badge" style="background:{bg};color:{tc}">{s.signal_type}</span>
-        <a href="{url}" target="_blank" class="art-src">{src_short}</a>
+        <a href="{url}" target="_blank" class="art-src">{src_display}</a>
       </div>
       <div class="art-hl">{headline}</div>
       <div class="art-acts">
-        <div class="act-impl">💡 {impl}</div>
-        <div class="act-do">⚡ {action}</div>
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>{impl}</div>
+        <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>{action}</div>
       </div>
     </div>"""
 
