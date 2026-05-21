@@ -139,6 +139,12 @@
     <button class="tab-btn" onclick="showTab('drafts',this)">
       📱 커뮤니케이션 초안<span id="draft-count" style="background:#c0392b;color:#fff;font-size:11px;border-radius:20px;padding:2px 10px;margin-left:8px;vertical-align:middle">4건</span>
     </button>
+    <button class="tab-btn" onclick="showTab('weekly',this)">
+      📝 Weekly
+    </button>
+    <button class="tab-btn" onclick="showTab('monthly',this)">
+      📅 Monthly
+    </button>
   </div>
 
   <!-- ═══ Tab1: Daily ═══ -->
@@ -218,6 +224,30 @@
     <div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">
       커뮤니케이션 초안은 다음 업데이트부터 자동 생성됩니다.
     </div>
+  </div>
+
+  <!-- ═══ Tab3: Weekly ═══ -->
+  <div id="tab-weekly" class="tab-content">
+  <!-- WEEKLY-AUTO-START -->
+    <div style="background:#f0f4ff;border-radius:10px;padding:18px 20px;margin-bottom:16px;
+                border:1px solid #d0d9f0;text-align:center">
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:6px">📊 주간 포트폴리오 요약</div>
+      <div style="font-size:12px;color:#868e96">매주 금요일 자동 업데이트됩니다.</div>
+    </div>
+    <div class="white-note">주간 리포트는 금요일 오전 업데이트됩니다.</div>
+  <!-- WEEKLY-AUTO-END -->
+  </div>
+
+  <!-- ═══ Tab4: Monthly ═══ -->
+  <div id="tab-monthly" class="tab-content">
+  <!-- MONTHLY-AUTO-START -->
+    <div style="background:#f0fff4;border-radius:10px;padding:18px 20px;margin-bottom:16px;
+                border:1px solid #c3e6cb;text-align:center">
+      <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:6px">📈 월간 포트폴리오 총평</div>
+      <div style="font-size:12px;color:#868e96">매월 말일 자동 업데이트됩니다.</div>
+    </div>
+    <div class="white-note">월간 리포트는 매월 마지막 영업일 업데이트됩니다.</div>
+  <!-- MONTHLY-AUTO-END -->
   </div>
 
   <div class="upd">
