@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, traceback
 
 print("=== Portfolio Agent 시작 ===", flush=True)
 
@@ -11,23 +11,60 @@ print(f"ANTHROPIC_API_KEY: {'✅ 있음' if anthropic_key else '❌ 없음'}", f
 print(f"TELEGRAM_BOT_TOKEN: {'✅ 있음' if telegram_token else '❌ 없음'}", flush=True)
 print(f"SMTP_PASSWORD: {'✅ 있음' if smtp_pw else '❌ 없음'}", flush=True)
 
-from collector import Collector
-from classifier_groq import Classifier
-from dispatcher import Dispatcher, save_dashboard
+try:
+    from collector import Collector
+    from classifier_groq import Classifier
+    from dispatcher import Dispatcher, save_dashboard
+    print("✅ 모듈 로드 완료", flush=True)
+except Exception as e:
+    print(f"❌ 모듈 로드 실패: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
-collector  = Collector()
-classifier = Classifier()
-dispatcher = Dispatcher()
+try:
+    collector  = Collector()
+    classifier = Classifier()
+    dispatcher = Dispatcher()
+    print("✅ 객체 초기화 완료", flush=True)
+except Exception as e:
+    print(f"❌ 초기화 실패: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
 print("[1/3] 기사 수집 시작...", flush=True)
-articles = collector.run()
-print(f"[1/3] 수집 완료: {len(articles)}건", flush=True)
+try:
+    articles = collector.run()
+    print(f"[1/3] 수집 완료: {len(articles)}건", flush=True)
+except Exception as e:
+    print(f"❌ 수집 실패: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
 print("[2/3] 분류 시작...", flush=True)
-signals = classifier.run(articles)
-print(f"[2/3] 분류 완료: {len(signals)}건", flush=True)
+try:
+    signals = classifier.run(articles)
+    print(f"[2/3] 분류 완료: {len(signals)}건", flush=True)
+except Exception as e:
+    print(f"❌ 분류 실패: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
 
-print("[3/3] 대시보드 생성 및 텔레그램 발송...", flush=True)
-save_dashboard(signals)
-dispatcher.send_daily(signals)
-print("[3/3] 완료!", flush=True)
+print("[3/3] 대시보드 생성...", flush=True)
+try:
+    save_dashboard(signals)
+    print("✅ 대시보드 저장 완료", flush=True)
+except Exception as e:
+    print(f"❌ 대시보드 생성 실패: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
+
+print("[3/3] 텔레그램/이메일 발송...", flush=True)
+try:
+    dispatcher.send_daily(signals)
+    print("✅ 발송 완료!", flush=True)
+except Exception as e:
+    print(f"❌ 발송 실패: {e}", flush=True)
+    traceback.print_exc()
+    # 발송 실패는 치명적이지 않으므로 exit하지 않음
+
+print("=== 완료! ===", flush=True)
