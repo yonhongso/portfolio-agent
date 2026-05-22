@@ -1,8 +1,9 @@
 # API 키 및 환경변수 (절대 업로드 금지)
 .env
 
-# 데이터베이스 캐시
+# 데이터베이스 캐시 (캐시 DB는 제외, 시그널 JSON은 허용)
 data/
+!data/signals_*.json
 *.db
 
 # Python 캐시

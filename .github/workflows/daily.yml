@@ -37,10 +37,14 @@ jobs:
           mkdir -p data logs
           python -u run_agent.py
 
-      - name: Commit updated dashboard
+      - name: Seed historical signals (first run only)
+        run: python seed_signals.py
+
+      - name: Commit updated dashboard and signals
         run: |
           git config user.name "Portfolio Agent Bot"
           git config user.email "action@github.com"
           git add dashboard.html
+          git add data/signals_*.json || true
           git diff --staged --quiet || git commit -m "dashboard: auto-update $(date +'%Y-%m-%d %H:%M KST')"
           git push

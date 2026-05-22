@@ -2570,10 +2570,14 @@ def _inject_section(html: str, start_marker: str, end_marker: str, new_content: 
 
 def save_dashboard(signals: list[ClassifiedSignal],
                    drafts_data: Optional[list[dict]] = None,
+                   weekly_signals: Optional[list] = None,
+                   monthly_signals: Optional[list] = None,
                    path: str = "dashboard.html") -> str:
     """
     기존 dashboard.html 템플릿을 유지하면서
     각 AUTO 마커 사이 콘텐츠를 교체.
+    weekly_signals: 과거 7일치 시그널 (없으면 오늘 signals 사용)
+    monthly_signals: 과거 30일치 시그널 (없으면 오늘 signals 사용)
     """
     import re
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -2596,17 +2600,19 @@ def save_dashboard(signals: list[ClassifiedSignal],
         "<!-- DAILY-AUTO-START -->", "<!-- DAILY-AUTO-END -->",
         _build_daily_overview_section(signals, generated_at))
 
-    # ── 2. Weekly 섹션
+    # ── 2. Weekly 섹션 (과거 7일치 우선, 없으면 오늘)
+    _weekly = weekly_signals if weekly_signals else signals
     if "<!-- WEEKLY-AUTO-START -->" in html:
         html = _inject_section(html,
             "<!-- WEEKLY-AUTO-START -->", "<!-- WEEKLY-AUTO-END -->",
-            _build_weekly_section(signals, generated_at))
+            _build_weekly_section(_weekly, generated_at))
 
-    # ── 3. Monthly 섹션
+    # ── 3. Monthly 섹션 (과거 30일치 우선, 없으면 오늘)
+    _monthly = monthly_signals if monthly_signals else signals
     if "<!-- MONTHLY-AUTO-START -->" in html:
         html = _inject_section(html,
             "<!-- MONTHLY-AUTO-START -->", "<!-- MONTHLY-AUTO-END -->",
-            _build_monthly_section(signals, generated_at))
+            _build_monthly_section(_monthly, generated_at))
 
     # ── 4. 커뮤니케이션 초안 섹션
     if "<!-- DRAFTS-AUTO-START -->" in html:
@@ -2625,8 +2631,11 @@ def save_dashboard(signals: list[ClassifiedSignal],
 
 
 def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
-    """Weekly 탭 내부 콘텐츠 생성."""
+    """Weekly 탭 내부 콘텐츠 생성 (과거 7일치 누적 데이터)."""
     from collections import defaultdict as _dd
+    from datetime import datetime as _dt, timedelta as _td
+    week_start = (_dt.now() - _td(days=6)).strftime("%m/%d")
+    week_end   = _dt.now().strftime("%m/%d")
     reds    = [s for s in signals if s.action_flag == "red"]
     yellows = [s for s in signals if s.action_flag == "yellow"]
     whites  = [s for s in signals if s.action_flag == "white"]
@@ -2661,9 +2670,16 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
     )
 
     return f"""
+    <!-- 주간 기간 표시 -->
+    <div style="background:#f8f9fa;border-radius:8px;padding:8px 14px;margin-bottom:10px;
+                font-size:11px;color:#6c757d;display:flex;justify-content:space-between;align-items:center">
+      <span>📅 집계 기간: {week_start} ~ {week_end} (최근 7일)</span>
+      <span style="color:#adb5bd">총 {len(signals)}건 시그널</span>
+    </div>
+
     <!-- 주간 지표 -->
     <table width="100%" cellspacing="0" cellpadding="0"
-           style="margin:14px 0 10px;border-collapse:separate;border-spacing:8px 0">
+           style="margin:0 0 10px;border-collapse:separate;border-spacing:8px 0">
       <tr>
         <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #e74c3c;box-shadow:0 2px 8px rgba(0,0,0,.06)">
           <div style="font-size:30px;font-weight:800;color:#c0392b">{len(reds)}</div>
@@ -2705,7 +2721,7 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
 
 
 def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
-    """Monthly 탭 내부 콘텐츠 생성."""
+    """Monthly 탭 내부 콘텐츠 생성 (과거 30일치 누적 데이터)."""
     from collections import defaultdict as _dd
     now = datetime.now()
 
@@ -2767,12 +2783,22 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
 
 def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
     """커뮤니케이션 초안 탭 내부 콘텐츠 생성."""
-    reds = [s for s in signals if s.action_flag == "red"][:6]
-    if not reds:
-        return '<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">오늘 즉시검토 시그널이 없어 초안이 생성되지 않았습니다.</div>'
+    reds    = [s for s in signals if s.action_flag == "red"][:6]
+    yellows = [s for s in signals if s.action_flag == "yellow"][:4]
+
+    # 🔴가 없으면 🟡 시그널로 초안 생성 (동향주시도 선제 커뮤니케이션 가능)
+    target_signals = reds if reds else yellows
+    flag_label = "🔴 즉시검토" if reds else "🟡 동향주시"
+
+    if not target_signals:
+        return (
+            '<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">'
+            '오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br>'
+            '<span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>'
+        )
 
     rows = ""
-    for i, s in enumerate(reds):
+    for i, s in enumerate(target_signals):
         try:
             msg_exec, msg_portfolio = _draft_contact_messages(s)
         except Exception:
@@ -2810,6 +2836,7 @@ def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
     <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
                 padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7d4e00">
       💡 <b>사용 방법:</b> 각 항목을 클릭하면 초안이 펼쳐집니다. <b>복사</b> 버튼으로 카카오톡·이메일에 붙여넣기 하세요.
+      <span style="float:right;font-size:11px;background:#fff;border-radius:4px;padding:2px 8px;color:#495057">{flag_label} 시그널 대상 · {len(target_signals)}건</span>
     </div>
     {rows}
 """
