@@ -126,7 +126,7 @@ except Exception as e:
 
 print("[3/3] email...", flush=True)
 try:
-    dispatcher.send_daily_email(signals)
+    dispatcher.send_daily_email(signals, weekly_signals=weekly_signals, monthly_signals=monthly_signals)
     print("email OK", flush=True)
 except Exception as e:
     print("email FAIL: {}".format(e), flush=True)
