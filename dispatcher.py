@@ -2631,93 +2631,242 @@ def save_dashboard(signals: list[ClassifiedSignal],
 
 
 def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
-    """Weekly 탭 내부 콘텐츠 생성 (과거 7일치 누적 데이터)."""
+    """Weekly 탭: 요일별 히트맵 + AI 인사이트 + 수렴분석 + 다음주 모니터링."""
     from collections import defaultdict as _dd
     from datetime import datetime as _dt, timedelta as _td
-    week_start = (_dt.now() - _td(days=6)).strftime("%m/%d")
-    week_end   = _dt.now().strftime("%m/%d")
-    reds    = [s for s in signals if s.action_flag == "red"]
-    yellows = [s for s in signals if s.action_flag == "yellow"]
-    whites  = [s for s in signals if s.action_flag == "white"]
 
-    # 주간 AI 인사이트 생성
+    today = _dt.now().date()
+    # 최근 5 영업일(월~금) 구하기
+    show_days = []
+    d = today
+    while len(show_days) < 5:
+        if d.weekday() < 5:
+            show_days.insert(0, d)
+        d -= _td(days=1)
+
+    weekday_kr = ["월","화","수","목","금","토","일"]
+    week_label = "{} {}~{}".format(
+        today.year,
+        show_days[0].strftime("%-m월 %-d일"),
+        show_days[-1].strftime("%-m월 %-d일"),
+    )
+
+    # ── 날짜 파싱
+    def parse_date(s):
+        for field in [s.classified_at, s.published_at]:
+            if field:
+                try:
+                    return _dt.fromisoformat(str(field).replace("Z","+00:00")).date()
+                except Exception:
+                    pass
+        return today
+
+    # ── 회사별/날짜별 집계
+    by_co      = _dd(list)
+    by_co_day  = _dd(lambda: _dd(list))
+    for s in signals:
+        by_co[s.portfolio_name].append(s)
+        by_co_day[s.portfolio_name][parse_date(s)].append(s)
+
+    _PRIORITY = {"업스테이지":1,"비엠스마일":2,"컬리":3,"에버온":4}
+    def _co_sort(co):
+        arts = by_co[co]
+        flag = min({"red":0,"yellow":1,"white":2}.get(a.action_flag,2) for a in arts)
+        return (flag, _PRIORITY.get(co,99), co)
+    sorted_cos = sorted(by_co.keys(), key=_co_sort)
+
+    reds_total    = sum(1 for s in signals if s.action_flag=="red")
+    yellows_total = sum(1 for s in signals if s.action_flag=="yellow")
+
+    # ── AI 인사이트
     try:
         ai_insight = _generate_weekly_insight(signals)
     except Exception:
         ai_insight = "주간 인사이트 생성 실패 — 수동 검토 필요."
 
-    # 회사별 집계
-    by_co: dict = _dd(list)
-    for s in signals:
-        by_co[s.portfolio_name].append(s)
-
-    top_items = sorted(signals,
-        key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag,2), x.source_tier))[:5]
-    top_html = "".join(
-        f"<div style='padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px'>"
-        f"{'🔴' if s.action_flag=='red' else '🟡' if s.action_flag=='yellow' else '⚪'} "
-        f"<b>{s.portfolio_name}</b> [{s.signal_type}] — {(s.summary_ko or s.title or '')[:60]}…</div>"
-        for s in top_items
+    insight_lines = [l for l in (ai_insight or "").split("\n") if l.strip()]
+    insight_html = "".join(
+        "<div style='margin:5px 0;font-size:13px;line-height:1.65;color:rgba(255,255,255,.92)'>{}</div>".format(l)
+        for l in insight_lines[:8]
     )
 
-    co_summary = "".join(
-        f"<div style='display:flex;justify-content:space-between;padding:5px 0;"
-        f"border-bottom:1px solid #f5f5f5;font-size:12px'>"
-        f"<span style='font-weight:600'>{co}</span>"
-        f"<span style='color:#868e96'>{len(arts)}건 "
-        f"({'🔴' if any(a.action_flag=='red' for a in arts) else '🟡' if any(a.action_flag=='yellow' for a in arts) else '⚪'})</span></div>"
-        for co, arts in sorted(by_co.items())
+    # ── 히트맵 헤더
+    day_headers = "".join(
+        "<th style='text-align:center;padding:8px 6px;font-size:11px;"
+        "color:#6c757d;font-weight:600;white-space:nowrap'>{} {}/{}</th>".format(
+            weekday_kr[d.weekday()], d.month, d.day)
+        for d in show_days
     )
 
-    return f"""
-    <!-- 주간 기간 표시 -->
-    <div style="background:#f8f9fa;border-radius:8px;padding:8px 14px;margin-bottom:10px;
-                font-size:11px;color:#6c757d;display:flex;justify-content:space-between;align-items:center">
-      <span>📅 집계 기간: {week_start} ~ {week_end} (최근 7일)</span>
-      <span style="color:#adb5bd">총 {len(signals)}건 시그널</span>
-    </div>
+    # ── 히트맵 행
+    heatmap_rows = ""
+    for co in sorted_cos[:12]:
+        arts = by_co[co]
+        best_flag = min({"red":0,"yellow":1,"white":2}.get(a.action_flag,2) for a in arts)
+        co_color  = "#c0392b" if best_flag==0 else "#d68910" if best_flag==1 else "#495057"
+        flag_em   = "🔴" if best_flag==0 else "🟡" if best_flag==1 else "⚪"
 
-    <!-- 주간 지표 -->
-    <table width="100%" cellspacing="0" cellpadding="0"
-           style="margin:0 0 10px;border-collapse:separate;border-spacing:8px 0">
-      <tr>
-        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #e74c3c;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-          <div style="font-size:30px;font-weight:800;color:#c0392b">{len(reds)}</div>
-          <div style="font-size:10px;color:#adb5bd;margin-top:4px">🔴 즉시검토</div>
-        </td>
-        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #f39c12;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-          <div style="font-size:30px;font-weight:800;color:#d68910">{len(yellows)}</div>
-          <div style="font-size:10px;color:#adb5bd;margin-top:4px">🟡 동향주시</div>
-        </td>
-        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #adb5bd;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-          <div style="font-size:30px;font-weight:800;color:#868e96">{len(whites)}</div>
-          <div style="font-size:10px;color:#adb5bd;margin-top:4px">⚪ 정기모니터링</div>
-        </td>
-        <td style="background:#fff;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid #3498db;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-          <div style="font-size:30px;font-weight:800;color:#2980b9">{len(by_co)}</div>
-          <div style="font-size:10px;color:#adb5bd;margin-top:4px">📡 감지 기업</div>
-        </td>
-      </tr>
-    </table>
+        row_cells = ""
+        for d in show_days:
+            day_arts = by_co_day[co].get(d, [])
+            n = len(day_arts)
+            if n == 0:
+                row_cells += "<td style='text-align:center;padding:8px 6px;color:#ced4da;font-size:13px'>—</td>"
+            else:
+                best_d = min({"red":0,"yellow":1,"white":2}.get(a.action_flag,2) for a in day_arts)
+                if best_d == 0:
+                    bg="rgba(231,76,60,.12)"; fg="#c0392b"
+                elif best_d == 1:
+                    bg="rgba(243,156,18,.12)"; fg="#d68910"
+                else:
+                    bg="rgba(39,174,96,.10)"; fg="#27ae60"
+                row_cells += (
+                    "<td style='text-align:center;padding:8px 6px;background:{bg};"
+                    "color:{fg};font-size:13px;font-weight:700'>{n}</td>"
+                ).format(bg=bg, fg=fg, n=n)
 
-    <!-- AI 주간 인사이트 -->
-    <div class="exec-box" style="background:#f0f4ff;border-color:#3498db;">
-      <span class="e-label" style="color:#2980b9;">📊 Weekly AI Insight</span>
-      <div class="e-main" style="color:#1a1a2e;line-height:1.8;font-size:13px;white-space:pre-line">{ai_insight}</div>
-    </div>
+        heatmap_rows += (
+            "<tr style='border-bottom:1px solid #f0f0f0'>"
+            "<td style='padding:8px 12px;font-weight:700;font-size:13px;color:{co_color}'>"
+            "{flag_em} {co}</td>"
+            "{row_cells}"
+            "<td style='text-align:center;padding:8px 8px;font-weight:800;"
+            "font-size:14px;color:{co_color}'>{total}건</td>"
+            "</tr>"
+        ).format(co_color=co_color, flag_em=flag_em, co=co,
+                 row_cells=row_cells, total=len(arts))
 
-    <!-- 주간 Top 시그널 -->
-    <div class="section-header"><span>📌 주간 Top 시그널</span></div>
-    <div style="background:#fff;border-radius:8px;padding:12px 16px;border:1px solid #e9ecef;margin-bottom:16px">
-      {top_html}
-    </div>
+    # ── 수렴 시그널 분석
+    convergence_cards = ""
+    for co in sorted_cos[:6]:
+        arts = by_co[co]
+        if len(arts) < 2:
+            continue
+        tc = _dd(int)
+        for a in arts:
+            tc[a.signal_type] += 1
+        n_types   = len(tc)
+        max_type  = max(tc, key=tc.get)
+        max_count = tc[max_type]
 
-    <!-- 기업별 주간 현황 -->
-    <div class="section-header"><span>🏢 기업별 주간 현황</span></div>
-    <div style="background:#fff;border-radius:8px;padding:12px 16px;border:1px solid #e9ecef">
-      {co_summary}
-    </div>
-"""
+        if max_count >= 3 and n_types == 1:
+            label="CONCENTRATED"; lc="#e74c3c"; lb="#fdf0f0"
+            summary = "단일 카테고리 집중형. {} ×{}".format(max_type, max_count)
+        elif n_types >= 2 and len(arts) >= 3:
+            label="HIGH CONVERGENCE"; lc="#8e44ad"; lb="#f5eef8"
+            summary = "이번 주 {}건 · {}개 카테고리 수렴".format(len(arts), n_types)
+        else:
+            continue
+
+        pills = "".join(
+            "<span style='display:inline-block;background:{lb};color:{lc};"
+            "border:1px solid {lc};border-radius:3px;padding:1px 7px;"
+            "font-size:10px;font-weight:700;margin:2px 2px 0 0'>{t} ×{c}</span>".format(
+                lb=lb, lc=lc, t=t, c=c)
+            for t,c in sorted(tc.items(), key=lambda x:-x[1])[:3]
+        )
+
+        top_art = sorted(arts, key=lambda x: {"red":0,"yellow":1,"white":2}.get(x.action_flag,2))[0]
+        desc_text = (top_art.summary_ko or "")[:70] + "…" if top_art.summary_ko else ""
+
+        convergence_cards += (
+            "<div style='border:1.5px solid {lc};border-radius:8px;margin-bottom:10px;overflow:hidden'>"
+            "<div style='background:{lb};padding:8px 12px;display:flex;align-items:center;gap:8px'>"
+            "<span style='background:{lc};color:#fff;font-size:9px;font-weight:800;"
+            "padding:2px 8px;border-radius:3px;letter-spacing:.5px'>{label}</span>"
+            "<span style='font-weight:700;font-size:13px'>{co}</span>"
+            "</div>"
+            "<div style='padding:8px 12px'>{pills}</div>"
+            "<div style='padding:0 12px 10px;font-size:12px;color:#6c757d;line-height:1.5'>{desc}</div>"
+            "</div>"
+        ).format(lc=lc, lb=lb, label=label, co=co, pills=pills, desc=desc_text)
+
+    if not convergence_cards:
+        convergence_cards = '<div style="color:#adb5bd;font-size:12px;padding:8px">이번 주 수렴 시그널 없음</div>'
+
+    # ── 다음 주 모니터링 포인트
+    next_week_start = (today + _td(days=(7-today.weekday()))).strftime("%-m/%d")
+    next_week_end   = (today + _td(days=(11-today.weekday()))).strftime("%-m/%d")
+    top_signals = sorted(signals, key=lambda x: {"red":0,"yellow":1,"white":2}.get(x.action_flag,2))[:5]
+    monitoring_items = ""
+    for s in top_signals:
+        em = "🔴" if s.action_flag=="red" else "🟡"
+        fc = "#c0392b" if s.action_flag=="red" else "#d68910"
+        snippet = (s.summary_ko or s.title or "")[:55]
+        monitoring_items += (
+            "<div style='margin:7px 0;font-size:12px;line-height:1.55'>"
+            "<span style='color:{fc};font-weight:700'>{em} {co}</span>"
+            " — {snippet}… 후속 동향 주시</div>"
+        ).format(fc=fc, em=em, co=s.portfolio_name, snippet=snippet)
+    if not monitoring_items:
+        monitoring_items = '<div style="color:#adb5bd;font-size:12px">특이 모니터링 포인트 없음</div>'
+
+    return (
+        # ── AI 주간 총평
+        "<div style='background:linear-gradient(135deg,#1a2744,#2c3e6b);border-radius:10px;"
+        "padding:18px 20px;margin-bottom:16px'>"
+        "<div style='font-size:10px;color:rgba(255,255,255,.5);font-weight:600;"
+        "letter-spacing:1px;margin-bottom:6px'>📋 AI 주간 포트폴리오 총평 — {week_label}</div>"
+        "<div style='font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px'>"
+        "총 {total}건 시그널 · 🔴 즉시검토 {red}건 · 🟡 동향주시 {yellow}건 · {n_co}개사</div>"
+        "{insight_html}"
+        "</div>"
+
+        # ── 요일별 히트맵
+        "<div style='font-size:11px;font-weight:700;color:#495057;letter-spacing:.5px;"
+        "padding:10px 0 8px;border-bottom:1.5px solid #e9ecef;margin-bottom:12px'>"
+        "📅 요일별 시그널 히트맵"
+        "<span style='font-size:10px;font-weight:400;color:#adb5bd;margin-left:8px'>"
+        "셀 색상 = 최고 플래그 수준 / 숫자 = 기사 건수</span></div>"
+        "<div style='overflow-x:auto;margin-bottom:20px'>"
+        "<table style='border-collapse:collapse;width:100%;background:#fff;"
+        "border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)'>"
+        "<thead><tr style='background:#f8f9fa;border-bottom:2px solid #e9ecef'>"
+        "<th style='text-align:left;padding:8px 12px;font-size:11px;color:#495057;"
+        "font-weight:700'>포트폴리오사</th>"
+        "{day_headers}"
+        "<th style='text-align:center;padding:8px 8px;font-size:11px;color:#495057;"
+        "font-weight:700'>주간계</th>"
+        "</tr></thead>"
+        "<tbody>{heatmap_rows}</tbody>"
+        "</table></div>"
+
+        # ── 하단: 수렴분석 | 다음주 모니터링 (2컬럼)
+        "<div style='display:flex;gap:14px;flex-wrap:wrap'>"
+
+        # 수렴분석
+        "<div style='flex:1;min-width:240px'>"
+        "<div style='font-size:11px;font-weight:700;color:#495057;letter-spacing:.5px;"
+        "padding-bottom:8px;border-bottom:1.5px solid #e9ecef;margin-bottom:12px'>"
+        "⚡ 수렴 시그널 분석</div>"
+        "{convergence_cards}"
+        "</div>"
+
+        # 다음 주 모니터링
+        "<div style='flex:1;min-width:240px'>"
+        "<div style='font-size:11px;font-weight:700;color:#495057;letter-spacing:.5px;"
+        "padding-bottom:8px;border-bottom:1.5px solid #e9ecef;margin-bottom:12px'>"
+        "🎯 다음 주 모니터링 포인트 ({nw_start}~{nw_end})</div>"
+        "<div style='background:#fff;border-radius:8px;padding:12px 14px;"
+        "border:1px solid #e9ecef'>"
+        "{monitoring_items}"
+        "</div></div>"
+
+        "</div>"  # flex end
+    ).format(
+        week_label=week_label,
+        total=len(signals),
+        red=reds_total,
+        yellow=yellows_total,
+        n_co=len(by_co),
+        insight_html=insight_html,
+        day_headers=day_headers,
+        heatmap_rows=heatmap_rows,
+        convergence_cards=convergence_cards,
+        nw_start=next_week_start,
+        nw_end=next_week_end,
+        monitoring_items=monitoring_items,
+    )
 
 
 def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
