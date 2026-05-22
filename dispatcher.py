@@ -2631,79 +2631,65 @@ def save_dashboard(signals: list[ClassifiedSignal],
 
 
 def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
-    """Weekly 탭: 요일별 히트맵 + 수렴 리스크 + 다음 주 모니터링.
-    PM 관점 개선사항
-    - 포트폴리오 정렬: 중요 검토 필요도 높은 순(🔴 > 🟡 > ⚪), 동일 등급 내 리스크 점수 순.
-    - 히트맵: 요일별 최고 리스크 색상 + 기사 수 + title tooltip 제공.
-    - 수렴 시그널: 복수 리스크 카테고리가 동시에 발생한 건을 최대 3건만 노출.
-    - 다음 주 모니터링: 회사 단위 리스크 점수 상위 5개 선정, 중복 기사 나열 방지.
-    - 디버깅: HTML escape, 날짜 파싱 안정화, Linux/Windows strftime 호환, 빈 값 방어.
-    """
+    """Weekly 탭: 요일별 히트맵 + 수렴 리스크 + 다음 주 모니터링."""
     from collections import defaultdict as _dd
     from datetime import datetime as _dt, timedelta as _td
     from html import escape as _esc
-    FLAG_RANK = {"red": 0, "yellow": 1, "white": 2}
+    FLAG_RANK  = {"red": 0, "yellow": 1, "white": 2}
     FLAG_SCORE = {"red": 100, "yellow": 45, "white": 5}
     TYPE_WEIGHT = {
-        "경영진 변동": 25,
-        "M&A·Exit": 25,
-        "M&A&Exit": 25,
-        "자금조달": 20,
-        "IPO·상장": 20,
-        "IPO": 20,
-        "재무": 18,
-        "제품·기술": 15,
-        "규제·법무": 15,
-        "파트너십": 10,
+        "경영진 변동": 25, "M&A·Exit": 25, "M&A&Exit": 25,
+        "자금조달": 20, "IPO·상장": 20, "IPO": 20, "재무": 18,
+        "제품·기술": 15, "규제·법무": 15, "파트너십": 10,
     }
-    FLAG_TEXT = {"red": "즉시검토", "yellow": "동향주시", "white": "정기모니터링"}
+    # 시그널 유형별 고유 색상 (텍스트색, 배경색)
+    TYPE_COLORS = {
+        "M&A·Exit":   ("#1d4ed8", "#dbeafe"),
+        "M&A&Exit":   ("#1d4ed8", "#dbeafe"),
+        "자금조달":   ("#15803d", "#dcfce7"),
+        "IPO·상장":   ("#0e7490", "#cffafe"),
+        "IPO":        ("#0e7490", "#cffafe"),
+        "재무":       ("#c2410c", "#ffedd5"),
+        "경영진 변동":("#9f1239", "#ffe4e6"),
+        "규제·법무":  ("#7c3aed", "#ede9fe"),
+        "파트너십":   ("#0f766e", "#ccfbf1"),
+        "제품·기술":  ("#1e40af", "#e0e7ff"),
+    }
+    _TYPE_COLOR_DEFAULT = ("#475569", "#f1f5f9")
+    FLAG_TEXT  = {"red": "즉시검토", "yellow": "동향주시", "white": "정기모니터링"}
     WEEKDAY_KR = ["월", "화", "수", "목", "금", "토", "일"]
-    def _fmt_md(d):
-        return f"{d.month}/{d.day}"
-    def _fmt_kr_md(d):
-        return f"{d.month}월 {d.day}일"
-    def _flag(s) -> str:
-        return (getattr(s, "action_flag", "white") or "white").lower()
-    def _type(s) -> str:
-        return _esc(str(getattr(s, "signal_type", "기타") or "기타"))
-    def _co(s) -> str:
-        return str(getattr(s, "portfolio_name", "미분류") or "미분류")
-    def _title(s) -> str:
-        return str(getattr(s, "title", "") or getattr(s, "summary_ko", "") or "")
-    def _summary(s) -> str:
-        return str(getattr(s, "summary_ko", "") or getattr(s, "title", "") or "")
-    def _truncate(text: str, limit: int = 72) -> str:
+
+    def _fmt_md(d):     return f"{d.month}/{d.day}"
+    def _fmt_kr_md(d):  return f"{d.month}월 {d.day}일"
+    def _flag(s):       return (getattr(s, "action_flag", "white") or "white").lower()
+    def _co(s):         return str(getattr(s, "portfolio_name", "미분류") or "미분류")
+    def _title(s):      return str(getattr(s, "title", "") or getattr(s, "summary_ko", "") or "")
+    def _summary(s):    return str(getattr(s, "summary_ko", "") or getattr(s, "title", "") or "")
+    def _truncate(text, limit=72):
         text = " ".join(str(text or "").split())
         return text if len(text) <= limit else text[:limit].rstrip() + "…"
     def _parse_date(s):
-        for field_name in ("classified_at", "published_at", "created_at"):
-            raw = getattr(s, field_name, None)
+        for fn in ("classified_at", "published_at", "created_at"):
+            raw = getattr(s, fn, None)
             if not raw:
                 continue
             try:
-                raw = str(raw).replace("Z", "+00:00")
-                return _dt.fromisoformat(raw).date()
+                return _dt.fromisoformat(str(raw).replace("Z", "+00:00")).date()
             except Exception:
                 continue
         return None
-    def _risk_score(items) -> int:
-        score = 0
-        types_seen = set()
-        red_count = 0
+    def _risk_score(items):
+        score, types_seen, red_cnt = 0, set(), 0
         for item in items:
             f = _flag(item)
             t = str(getattr(item, "signal_type", "기타") or "기타")
             score += FLAG_SCORE.get(f, 5) + TYPE_WEIGHT.get(t, 8)
-            types_seen.add(t)
-            if f == "red":
-                red_count += 1
-        if len(items) >= 2:
-            score += min(35, (len(items) - 1) * 8)
-        if len(types_seen) >= 2:
-            score += 35
-        if red_count >= 2:
-            score += 25
+            types_seen.add(t); red_cnt += (f == "red")
+        if len(items) >= 2:  score += min(35, (len(items)-1)*8)
+        if len(types_seen) >= 2: score += 35
+        if red_cnt >= 2:     score += 25
         return score
+
     today = _dt.now().date()
     show_days = []
     d = today
@@ -2711,10 +2697,11 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         if d.weekday() < 5:
             show_days.insert(0, d)
         d -= _td(days=1)
-    week_label = f"{today.year} {_fmt_kr_md(show_days[0])}~{_fmt_kr_md(show_days[-1])}"
-    next_monday = today + _td(days=(7 - today.weekday()) % 7 or 7)
-    next_friday = next_monday + _td(days=4)
-    by_co = _dd(list)
+    week_label   = f"{today.year} {_fmt_kr_md(show_days[0])}~{_fmt_kr_md(show_days[-1])}"
+    next_monday  = today + _td(days=(7 - today.weekday()) % 7 or 7)
+    next_friday  = next_monday + _td(days=4)
+
+    by_co     = _dd(list)
     by_co_day = _dd(lambda: _dd(list))
     for s in signals:
         co = _co(s)
@@ -2722,14 +2709,16 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         parsed = _parse_date(s)
         if parsed:
             by_co_day[co][parsed].append(s)
-    def _company_sort_key(co: str):
+
+    def _company_sort_key(co):
         items = by_co[co]
         best_flag = min(FLAG_RANK.get(_flag(x), 2) for x in items)
         return (best_flag, -_risk_score(items), co)
-    sorted_cos = sorted(by_co.keys(), key=_company_sort_key)
-    reds_total = sum(1 for s in signals if _flag(s) == "red")
+    sorted_cos    = sorted(by_co.keys(), key=_company_sort_key)
+    reds_total    = sum(1 for s in signals if _flag(s) == "red")
     yellows_total = sum(1 for s in signals if _flag(s) == "yellow")
-    # AI 주간 총평: 실패해도 대시보드 전체 렌더링은 유지
+
+    # AI 주간 총평
     try:
         ai_insight = _generate_weekly_insight(signals)
     except Exception:
@@ -2740,24 +2729,29 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         f"<span style='color:#ffd166'>●</span><span>{_esc(line)}</span></div>"
         for line in insight_lines[:4]
     ) or "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
-    # 히트맵
+
+    # ── 히트맵 헤더
     day_headers = "".join(
-        "<th style='text-align:center;padding:10px 8px;font-size:12px;color:#dbe4ff;font-weight:800;white-space:nowrap'>"
-        f"{WEEKDAY_KR[d.weekday()]} {_fmt_md(d)}</th>"
+        "<th style='text-align:center;padding:10px 8px;font-size:12px;color:#dbe4ff;"
+        f"font-weight:800;white-space:nowrap'>{WEEKDAY_KR[d.weekday()]} {_fmt_md(d)}</th>"
         for d in show_days
     )
+
+    # ── 히트맵 행
     heatmap_rows = ""
     for co in sorted_cos:
         items = by_co[co]
         best_flag = min(FLAG_RANK.get(_flag(x), 2) for x in items)
-        flag_key = "red" if best_flag == 0 else "yellow" if best_flag == 1 else "white"
-        co_color = "#ef4444" if flag_key == "red" else "#f59e0b" if flag_key == "yellow" else "#64748b"
-        flag_em = "🔴" if flag_key == "red" else "🟡" if flag_key == "yellow" else "⚪"
-        score = _risk_score(items)
+        flag_key  = "red" if best_flag == 0 else "yellow" if best_flag == 1 else "white"
+        co_color  = "#ef4444" if flag_key == "red" else "#f59e0b" if flag_key == "yellow" else "#64748b"
+        flag_em   = "🔴" if flag_key == "red" else "🟡" if flag_key == "yellow" else "⚪"
+
         row_cells = ""
+        week_count = 0   # 히트맵 표시 기간(5영업일) 내 실제 기사 합계
         for day in show_days:
             day_items = by_co_day[co].get(day, [])
             n = len(day_items)
+            week_count += n
             if not n:
                 row_cells += "<td style='text-align:center;padding:11px 8px;color:#cbd5e1;font-size:13px'>—</td>"
                 continue
@@ -2771,21 +2765,43 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
             tooltip = _esc("\n".join(_truncate(_title(x), 48) for x in day_items[:5]))
             row_cells += (
                 f"<td title='{tooltip}' style='text-align:center;padding:8px'>"
-                f"<span style='display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:28px;"
-                f"background:{bg};color:{fg};border:1px solid {border};border-radius:8px;font-size:13px;font-weight:900'>{n}</span></td>"
+                "<span style='display:inline-flex;align-items:center;justify-content:center;"
+                f"min-width:30px;height:28px;background:{bg};color:{fg};border:1px solid {border};"
+                f"border-radius:8px;font-size:13px;font-weight:900'>{n}</span></td>"
             )
+
         heatmap_rows += (
             "<tr style='border-bottom:1px solid #eef2f7'>"
             f"<td style='padding:12px 14px;font-weight:900;font-size:13px;color:#0f172a;white-space:nowrap'>"
-            f"<span style='margin-right:7px'>{flag_em}</span>{_esc(co)}"
-            f"<div style='font-weight:600;font-size:10px;color:{co_color};margin-top:3px'>Risk Score {score}</div></td>"
+            f"<span style='margin-right:7px'>{flag_em}</span>{_esc(co)}</td>"
             f"{row_cells}"
-            f"<td style='text-align:center;padding:10px 8px;font-weight:900;font-size:13px;color:{co_color};white-space:nowrap'>{len(items)}건</td>"
+            f"<td style='text-align:center;padding:10px 8px;font-weight:900;font-size:13px;"
+            f"color:{co_color};white-space:nowrap'>{week_count}건</td>"
             "</tr>"
         )
     if not heatmap_rows:
-        heatmap_rows = "<tr><td colspan='7' style='text-align:center;padding:32px;color:#94a3b8'>이번 주 집계된 시그널이 없습니다.</td></tr>"
-    # 복수 리스크/수렴 시그널: 최대 3건
+        heatmap_rows = ("<tr><td colspan='7' style='text-align:center;padding:32px;color:#94a3b8'>"
+                        "이번 주 집계된 시그널이 없습니다.</td></tr>")
+
+    # ── 히트맵 색상 범례
+    heatmap_legend = (
+        "<div style='display:flex;gap:14px;flex-wrap:wrap;padding:8px 4px 0;"
+        "font-size:11px;color:#64748b'>"
+        "<span style='font-weight:700;color:#475569'>셀 색상 기준:</span>"
+        "<span><span style='display:inline-block;width:12px;height:12px;border-radius:3px;"
+        "background:#fee2e2;border:1px solid #fecaca;vertical-align:middle;margin-right:4px'></span>"
+        "🔴 즉시검토 (빨강)</span>"
+        "<span><span style='display:inline-block;width:12px;height:12px;border-radius:3px;"
+        "background:#fef3c7;border:1px solid #fde68a;vertical-align:middle;margin-right:4px'></span>"
+        "🟡 동향주시 (노랑)</span>"
+        "<span><span style='display:inline-block;width:12px;height:12px;border-radius:3px;"
+        "background:#dcfce7;border:1px solid #bbf7d0;vertical-align:middle;margin-right:4px'></span>"
+        "⚪ 정기모니터링 (초록)</span>"
+        "<span style='color:#94a3b8'>— = 해당일 기사 없음 · 숫자 = 기사 건수</span>"
+        "</div>"
+    )
+
+    # ── 수렴 시그널 분석 (최대 3건)
     convergence_candidates = []
     for co, items in by_co.items():
         type_counts = _dd(int)
@@ -2798,106 +2814,147 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         if len(type_counts) >= 2 or flag_counts["red"] >= 2 or max(type_counts.values() or [0]) >= 3:
             convergence_candidates.append((co, items, type_counts, flag_counts, _risk_score(items)))
     convergence_candidates.sort(key=lambda x: (-x[4], x[0]))
+
     convergence_cards = ""
     for co, items, type_counts, flag_counts, score in convergence_candidates[:3]:
         n_types = len(type_counts)
         if n_types >= 2:
             label, lc, lb = "HIGH CONVERGENCE", "#7c3aed", "#f5f3ff"
             headline = f"이번 주 {len(items)}건 · {n_types}개 리스크 카테고리 수렴"
-            pm_action = "IR/대표 채널을 통해 사실관계와 후속 일정 확인 필요"
         else:
             label, lc, lb = "CONCENTRATED", "#ef4444", "#fff1f2"
             top_type = max(type_counts, key=type_counts.get)
             headline = f"{top_type} 단일 이슈가 {type_counts[top_type]}건 반복 노출"
-            pm_action = "시장 노출 빈도 증가에 따른 평판·조건 변화 가능성 점검 필요"
+
+        # 유형별 개별 색상 pill
         pills = "".join(
-            f"<span style='display:inline-block;background:#fff;color:{lc};border:1px solid {lc};border-radius:999px;padding:3px 9px;font-size:10px;font-weight:900;margin:2px 4px 2px 0'>{_esc(t)} ×{c}</span>"
+            "<span style='display:inline-block;"
+            f"background:{TYPE_COLORS.get(t, _TYPE_COLOR_DEFAULT)[1]};"
+            f"color:{TYPE_COLORS.get(t, _TYPE_COLOR_DEFAULT)[0]};"
+            f"border:1px solid {TYPE_COLORS.get(t, _TYPE_COLOR_DEFAULT)[0]};"
+            "border-radius:999px;padding:3px 9px;font-size:10px;font-weight:900;"
+            f"margin:2px 4px 2px 0'>{_esc(t)} ×{c}</span>"
             for t, c in sorted(type_counts.items(), key=lambda x: -x[1])[:4]
         )
-        top_item = sorted(items, key=lambda x: (FLAG_RANK.get(_flag(x), 2), -TYPE_WEIGHT.get(str(getattr(x, "signal_type", "기타") or "기타"), 8)))[0]
+        top_item = sorted(
+            items,
+            key=lambda x: (FLAG_RANK.get(_flag(x), 2),
+                           -TYPE_WEIGHT.get(str(getattr(x, "signal_type", "기타") or "기타"), 8))
+        )[0]
         desc = _truncate(_summary(top_item), 92)
+
         convergence_cards += (
-            f"<div style='border:1.5px solid {lc};border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.05)'>"
+            f"<div style='border:1.5px solid {lc};border-radius:12px;margin-bottom:12px;"
+            "overflow:hidden;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.05)'>"
             f"<div style='background:{lb};padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap'>"
-            f"<span style='background:{lc};color:#fff;font-size:10px;font-weight:900;padding:4px 9px;border-radius:6px;letter-spacing:.4px'>{label}</span>"
+            f"<span style='background:{lc};color:#fff;font-size:10px;font-weight:900;"
+            f"padding:4px 9px;border-radius:6px;letter-spacing:.4px'>{label}</span>"
             f"<span style='font-weight:900;font-size:14px;color:#111827'>{_esc(co)}</span>"
-            f"<span style='font-size:11px;color:#64748b'>Risk Score {score}</span>"
-            f"</div>"
+            "</div>"
             f"<div style='padding:10px 14px 4px'>{pills}</div>"
-            f"<div style='padding:3px 14px 13px;font-size:12px;color:#475569;line-height:1.65'>"
-            f"<b style='color:#111827'>{_esc(headline)}</b><br>{_esc(desc)}<br>"
-            f"<span style='color:{lc};font-weight:800'>PM Action:</span> {_esc(pm_action)}"
-            f"</div></div>"
+            "<div style='padding:3px 14px 13px;font-size:12px;color:#475569;line-height:1.65'>"
+            f"<b style='color:#111827'>{_esc(headline)}</b><br>{_esc(desc)}"
+            "</div></div>"
         )
     if not convergence_cards:
-        convergence_cards = '<div style="background:#fff;border:1px dashed #cbd5e1;border-radius:12px;color:#94a3b8;font-size:12px;padding:18px;text-align:center">이번 주 복수 리스크 수렴 시그널 없음</div>'
-    # 다음 주 모니터링: 포트폴리오 단위 상위 5개
+        convergence_cards = (
+            "<div style='background:#fff;border:1px dashed #cbd5e1;border-radius:12px;"
+            "color:#94a3b8;font-size:12px;padding:18px;text-align:center'>"
+            "이번 주 복수 리스크 수렴 시그널 없음</div>"
+        )
+
+    # ── 다음 주 모니터링 (상위 5개사, 중복 없이 핵심 1건)
     monitoring_items = ""
     for idx, co in enumerate(sorted_cos[:5], start=1):
         items = by_co[co]
-        top_item = sorted(items, key=lambda x: (FLAG_RANK.get(_flag(x), 2), -TYPE_WEIGHT.get(str(getattr(x, "signal_type", "기타") or "기타"), 8)))[0]
+        top_item = sorted(
+            items,
+            key=lambda x: (FLAG_RANK.get(_flag(x), 2),
+                           -TYPE_WEIGHT.get(str(getattr(x, "signal_type", "기타") or "기타"), 8))
+        )[0]
         f = _flag(top_item)
         fc = "#dc2626" if f == "red" else "#d97706" if f == "yellow" else "#64748b"
         em = "🔴" if f == "red" else "🟡" if f == "yellow" else "⚪"
-        type_counts = _dd(int)
-        for x in items:
-            type_counts[str(getattr(x, "signal_type", "기타") or "기타")] += 1
-        top_types = ", ".join(f"{t} {c}건" for t, c in sorted(type_counts.items(), key=lambda x: -x[1])[:2])
-        snippet = _truncate(_summary(top_item), 58)
-        action = "조건 확정/공식 입장/IR 업데이트 확인" if f == "red" else "추가 기사 발생 여부와 이해관계자 반응 모니터링"
+        snippet = _truncate(_summary(top_item), 68)
         monitoring_items += (
             f"<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9'>"
-            f"<div style='width:24px;height:24px;border-radius:50%;background:#f8fafc;text-align:center;line-height:24px;font-size:11px;font-weight:900;color:#475569'>{idx}</div>"
+            f"<div style='width:24px;height:24px;border-radius:50%;background:#f8fafc;"
+            f"text-align:center;line-height:24px;font-size:11px;font-weight:900;color:#475569'>{idx}</div>"
             f"<div style='flex:1;font-size:12px;line-height:1.55;color:#475569'>"
-            f"<div><span style='color:{fc};font-weight:900'>{em} {_esc(co)}</span> <span style='color:#94a3b8'>· {FLAG_TEXT.get(f, '정기모니터링')}</span></div>"
-            f"<div style='color:#111827;font-weight:700;margin-top:2px'>{_esc(top_types)}</div>"
-            f"<div>{_esc(snippet)}</div>"
-            f"<div style='color:{fc};font-weight:800;margin-top:2px'>Next: {_esc(action)}</div>"
+            f"<div><span style='color:{fc};font-weight:900'>{em} {_esc(co)}</span>"
+            f" <span style='color:#94a3b8'>· {FLAG_TEXT.get(f, '정기모니터링')}</span></div>"
+            f"<div style='margin-top:3px'>{_esc(snippet)}</div>"
             f"</div></div>"
         )
     if not monitoring_items:
-        monitoring_items = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:16px">특이 모니터링 포인트 없음</div>'
+        monitoring_items = (
+            "<div style='color:#94a3b8;font-size:12px;text-align:center;padding:16px'>"
+            "특이 모니터링 포인트 없음</div>"
+        )
+
     return (
-        f"<div style='background:#eef2f7;padding:0 0 4px'>"
-        f"<div style='background:linear-gradient(135deg,#172554 0%,#312e81 58%,#4c1d95 100%);border-radius:14px;padding:20px 22px;margin-bottom:18px;color:#fff;box-shadow:0 10px 28px rgba(30,41,59,.18)'>"
-        f"<div style='font-size:11px;color:rgba(255,255,255,.58);font-weight:800;letter-spacing:.8px;margin-bottom:10px'>📊 AI 주간 포트폴리오 총평 — {week_label}</div>"
-        f"<div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px'>"
-        f"<span style='background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>총 {len(signals)}건</span>"
-        f"<span style='background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.35);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>🔴 즉시검토 {reds_total}건</span>"
-        f"<span style='background:rgba(245,158,11,.22);border:1px solid rgba(251,191,36,.35);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>🟡 동향주시 {yellows_total}건</span>"
-        f"<span style='background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>{len(by_co)}개사</span>"
-        f"</div>"
+        "<div style='background:#eef2f7;padding:0 0 4px'>"
+        # AI 총평 박스
+        "<div style='background:linear-gradient(135deg,#172554 0%,#312e81 58%,#4c1d95 100%);"
+        "border-radius:14px;padding:20px 22px;margin-bottom:18px;color:#fff;"
+        "box-shadow:0 10px 28px rgba(30,41,59,.18)'>"
+        "<div style='font-size:11px;color:rgba(255,255,255,.58);font-weight:800;"
+        f"letter-spacing:.8px;margin-bottom:10px'>📊 AI 주간 포트폴리오 총평 — {week_label}</div>"
+        "<div style='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px'>"
+        "<span style='background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);"
+        f"border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>총 {len(signals)}건</span>"
+        "<span style='background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.35);"
+        f"border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>🔴 즉시검토 {reds_total}건</span>"
+        "<span style='background:rgba(245,158,11,.22);border:1px solid rgba(251,191,36,.35);"
+        f"border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>🟡 동향주시 {yellows_total}건</span>"
+        "<span style='background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);"
+        f"border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800'>{len(by_co)}개사</span>"
+        "</div>"
         f"{insight_html}"
-        f"</div>"
-        f"<div style='font-size:13px;font-weight:900;color:#0f172a;letter-spacing:.2px;padding:6px 0 10px;border-bottom:2px solid #dbe4ee;margin-bottom:12px'>"
-        f"📅 요일별 시그널 히트맵"
-        f"<span style='font-size:11px;font-weight:600;color:#64748b;margin-left:8px'>중요 검토 필요 포트폴리오 우선 정렬 · 셀 색상은 해당일 최고 플래그</span>"
-        f"</div>"
-        f"<div style='overflow-x:auto;margin-bottom:20px;border-radius:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)'>"
-        f"<table style='border-collapse:collapse;width:100%;background:#fff;overflow:hidden'>"
-        f"<thead><tr style='background:#111827'>"
-        f"<th style='text-align:left;padding:12px 14px;font-size:12px;color:#fff;font-weight:900;min-width:150px'>포트폴리오사</th>"
+        "</div>"
+        # 히트맵 섹션 제목
+        "<div style='font-size:13px;font-weight:900;color:#0f172a;letter-spacing:.2px;"
+        "padding:6px 0 10px;border-bottom:2px solid #dbe4ee;margin-bottom:12px'>"
+        "📅 요일별 시그널 히트맵"
+        "<span style='font-size:11px;font-weight:600;color:#64748b;margin-left:8px'>"
+        "중요 검토 필요 포트폴리오 우선 정렬 · 셀 색상은 해당일 최고 플래그</span></div>"
+        # 히트맵 테이블
+        "<div style='overflow-x:auto;border-radius:14px;box-shadow:0 8px 22px rgba(15,23,42,.06)'>"
+        "<table style='border-collapse:collapse;width:100%;background:#fff;overflow:hidden'>"
+        "<thead><tr style='background:#111827'>"
+        "<th style='text-align:left;padding:12px 14px;font-size:12px;color:#fff;"
+        "font-weight:900;min-width:150px'>포트폴리오사</th>"
         f"{day_headers}"
-        f"<th style='text-align:center;padding:12px 10px;font-size:12px;color:#fff;font-weight:900;white-space:nowrap'>주간계</th>"
-        f"</tr></thead>"
+        "<th style='text-align:center;padding:12px 10px;font-size:12px;color:#fff;"
+        "font-weight:900;white-space:nowrap'>주간계</th>"
+        "</tr></thead>"
         f"<tbody>{heatmap_rows}</tbody>"
-        f"</table></div>"
-        f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px'>"
-        f"<div>"
-        f"<div style='font-size:13px;font-weight:900;color:#0f172a;padding-bottom:9px;border-bottom:2px solid #dbe4ee;margin-bottom:12px'>"
-        f"⚡ 수렴 시그널 분석 <span style='font-size:11px;font-weight:600;color:#64748b'>동일 기업 내 복수 리스크/반복 노출 최대 3건</span>"
-        f"</div>"
+        "</table></div>"
+        # 범례
+        f"<div style='margin:6px 2px 18px'>{heatmap_legend}</div>"
+        # 하단 2컬럼
+        "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px'>"
+        # 수렴 시그널
+        "<div>"
+        "<div style='font-size:13px;font-weight:900;color:#0f172a;padding-bottom:9px;"
+        "border-bottom:2px solid #dbe4ee;margin-bottom:12px'>"
+        "⚡ 수렴 시그널 분석"
+        "<span style='font-size:11px;font-weight:600;color:#64748b;margin-left:6px'>"
+        "동일 기업 내 복수 리스크/반복 노출 최대 3건</span></div>"
         f"{convergence_cards}"
-        f"</div>"
-        f"<div>"
-        f"<div style='font-size:13px;font-weight:900;color:#0f172a;padding-bottom:9px;border-bottom:2px solid #dbe4ee;margin-bottom:12px'>"
+        "</div>"
+        # 다음 주 모니터링
+        "<div>"
+        "<div style='font-size:13px;font-weight:900;color:#0f172a;padding-bottom:9px;"
+        "border-bottom:2px solid #dbe4ee;margin-bottom:12px'>"
         f"🎯 다음 주 모니터링 포인트 ({_fmt_md(next_monday)}~{_fmt_md(next_friday)})"
-        f"</div>"
-        f"<div style='background:#fff;border-radius:14px;padding:6px 14px;border:1px solid #e2e8f0;box-shadow:0 8px 22px rgba(15,23,42,.05)'>"
+        "</div>"
+        "<div style='background:#fff;border-radius:14px;padding:6px 14px;"
+        "border:1px solid #e2e8f0;box-shadow:0 8px 22px rgba(15,23,42,.05)'>"
         f"{monitoring_items}"
-        f"</div></div>"
-        f"</div>"
-        f"</div>"
+        "</div></div>"
+        "</div>"  # grid end
+        "</div>"  # outer end
     )
 
 
