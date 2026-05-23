@@ -112,24 +112,27 @@ try:
     )
     print("dashboard OK", flush=True)
 except Exception as e:
-    print("dashboard FAIL: {}".format(e), flush=True)
-    traceback.print_exc()
-    sys.exit(1)
+    # AI 인사이트 실패해도 dashboard는 기본값으로 저장
+    print("dashboard WARN (AI 인사이트 실패, 기본값 사용): {}".format(e), flush=True)
+    try:
+        save_dashboard(signals)   # AI 없이 재시도
+        print("dashboard OK (AI 없이)", flush=True)
+    except Exception as e2:
+        print("dashboard FAIL: {}".format(e2), flush=True)
+        traceback.print_exc()
 
 print("[3/3] telegram alerts...", flush=True)
 try:
     dispatcher.send_telegram_alerts(signals)
     print("telegram OK", flush=True)
 except Exception as e:
-    print("telegram FAIL: {}".format(e), flush=True)
-    traceback.print_exc()
+    print("telegram FAIL (계속 진행): {}".format(e), flush=True)
 
 print("[3/3] email...", flush=True)
 try:
     dispatcher.send_daily_email(signals, weekly_signals=weekly_signals, monthly_signals=monthly_signals)
     print("email OK", flush=True)
 except Exception as e:
-    print("email FAIL: {}".format(e), flush=True)
-    traceback.print_exc()
+    print("email FAIL (계속 진행): {}".format(e), flush=True)
 
 print("=== DONE ===", flush=True)

@@ -98,24 +98,24 @@ def _call(prompt: str, retries: int = 3) -> Optional[str]:
 
     for attempt in range(retries):
         try:
-            r = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=60)
+            r = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=30)
             if r.status_code == 529:  # Anthropic overloaded
-                wait = 10 * (attempt + 1)
+                wait = 5 * (attempt + 1)   # 10→5초로 단축
                 logger.warning(f"[Claude] 과부하 → {wait}초 대기 (시도 {attempt+1}/{retries})")
                 time.sleep(wait)
                 continue
             r.raise_for_status()
             return r.json()["content"][0]["text"]
         except requests.exceptions.HTTPError as e:
-            wait = 5 * (attempt + 1)
+            wait = 3 * (attempt + 1)   # 5→3초로 단축
             logger.warning(f"[Claude] HTTP 오류: {e} → {wait}초 대기 (시도 {attempt+1}/{retries})")
             time.sleep(wait)
         except Exception as e:
-            wait = 5 * (attempt + 1)
+            wait = 3 * (attempt + 1)
             logger.warning(f"[Claude] 오류: {e} → {wait}초 대기 (시도 {attempt+1}/{retries})")
             time.sleep(wait)
 
-    logger.error(f"[Claude] {retries}회 재시도 모두 실패")
+    logger.warning(f"[Claude] {retries}회 재시도 모두 실패 — None 반환")
     return None
 
 
