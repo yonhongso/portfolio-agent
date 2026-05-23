@@ -210,7 +210,7 @@ class EmailSender:
 _HTML_STYLE = """
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  body { font-family: 'Malgun Gothic', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
          background: #edf0f4; color: #1a1a2e; -webkit-font-smoothing: antialiased; }
   .wrapper { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
 
@@ -1890,7 +1890,7 @@ class Dispatcher:
 <html lang="ko">
 <head><meta charset="UTF-8">
 <style>
-  body {{ font-family:-apple-system,'Segoe UI',sans-serif;color:#1a1a2e;
+  body {{ font-family:'Malgun Gothic',-apple-system,'Segoe UI',sans-serif;color:#1a1a2e;
           max-width:700px;margin:0 auto;padding:28px 24px;background:#fff }}
   table {{ border-collapse:collapse;width:100% }}
 </style>
@@ -2375,9 +2375,11 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
           🔴 즉시검토 시그널 없음 — 커뮤니케이션 초안이 생성되지 않았습니다.
         </div>"""
 
-    drafts_badge = (f'<span style="background:#c0392b;color:#fff;font-size:11px;'
+    n_drafts = len([d for d in (drafts_data or [])
+                    if (d.get("msg_exec") or "").strip() or (d.get("msg_portfolio") or "").strip()])
+    drafts_badge = (f'<span id="drafts-badge" style="background:#c0392b;color:#fff;font-size:11px;'
                     f'border-radius:20px;padding:2px 10px;margin-left:8px;vertical-align:middle">'
-                    f'{len(drafts_data)}건</span>') if drafts_data else ""
+                    f'{n_drafts}건</span>') if n_drafts > 0 else ""
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -3442,7 +3444,7 @@ def build_drafts_html(drafts_data: list[dict], generated_at: str) -> str:
 <title>커뮤니케이션 초안 | Portfolio Intelligence</title>
 <style>
   * {{ box-sizing:border-box; margin:0; padding:0; }}
-  body {{ font-family:'Segoe UI',-apple-system,sans-serif; background:#edf0f4; color:#1a1a2e; }}
+  body {{ font-family:'Malgun Gothic','Segoe UI',-apple-system,sans-serif; background:#edf0f4; color:#1a1a2e; }}
   .wrap {{ max-width:900px; margin:0 auto; padding:24px 20px; }}
 
   .topbar {{ background:linear-gradient(150deg,#0d1b2a,#1a2744); border-radius:12px;
