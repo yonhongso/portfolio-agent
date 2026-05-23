@@ -981,11 +981,25 @@
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          btn.textContent = '✅ Done';
-          msg.style.color = 'rgba(255,255,255,.8)';
-          msg.textContent = 'Page will refresh in ~3 min with latest data.';
-          // 3분 후 자동 새로고침
-          setTimeout(() => { location.reload(); }, 180000);
+          btn.textContent = '✅ Running';
+          msg.style.color = 'rgba(255,255,255,.85)';
+
+          // 5분 카운트다운 타이머
+          const totalSec = 300;
+          let remaining = totalSec;
+          function updateCountdown() {
+            const m = String(Math.floor(remaining / 60)).padStart(2,'0');
+            const s = String(remaining % 60).padStart(2,'0');
+            msg.textContent = '🔄 Fetching latest data... auto-refresh in ' + m + ':' + s;
+            if (remaining <= 0) {
+              msg.textContent = '✅ Refreshing now...';
+              location.reload();
+            } else {
+              remaining--;
+              setTimeout(updateCountdown, 1000);
+            }
+          }
+          updateCountdown();
         } else {
           btn.textContent = '❌ Error';
           btn.disabled = false;
