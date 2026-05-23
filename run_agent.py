@@ -1,6 +1,26 @@
 import os, sys, json, glob, traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import asdict
+
+
+def filter_by_published(signals, days: int) -> list:
+    """published_at 기준 days일 이내 시그널만 반환."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    result = []
+    for s in signals:
+        try:
+            pub = s.published_at
+            if not pub:
+                continue
+            # 타임존 정보 없는 경우 UTC로 간주
+            pub_dt = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+            if pub_dt.tzinfo is None:
+                pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+            if pub_dt >= cutoff:
+                result.append(s)
+        except Exception:
+            pass  # 날짜 파싱 실패 시 제외
+    return result
 
 print("=== Portfolio Agent 시작 ===", flush=True)
 
@@ -101,7 +121,16 @@ if not weekly_signals:
 if not monthly_signals:
     monthly_signals = signals
 
-print("weekly: {} / monthly: {}".format(len(weekly_signals), len(monthly_signals)), flush=True)
+# ── published_at 기준 날짜 필터 적용
+# Daily  : 24시간 이내 기사만
+# Weekly : 7일 이내 기사만
+# Monthly: 30일 이내 기사만
+signals         = filter_by_published(signals, days=1)
+weekly_signals  = filter_by_published(weekly_signals, days=7)
+monthly_signals = filter_by_published(monthly_signals, days=30)
+
+print("filtered → daily: {} / weekly: {} / monthly: {}".format(
+    len(signals), len(weekly_signals), len(monthly_signals)), flush=True)
 
 print("[3/3] building dashboard...", flush=True)
 try:
