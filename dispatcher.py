@@ -2729,11 +2729,23 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         ai_insight = _generate_weekly_insight(signals)
     except Exception:
         ai_insight = "주간 인사이트 생성 실패 — 주요 리스크 항목을 수동으로 확인해 주세요."
-    insight_lines = [l.strip("-• ").strip() for l in (ai_insight or "").split("\n") if l.strip()]
+    import re as _re
+    def _strip_md(t):
+        t = _re.sub(r'\#{1,6}\s+', '', t)
+        t = _re.sub(r'\*{2,3}(.+?)\*{2,3}', r'\1', t)
+        t = _re.sub(r'\*(.+?)\*', r'\1', t)
+        t = _re.sub(r'`(.+?)`', r'\1', t)
+        return t.strip()
+    insight_lines = [
+        _strip_md(l.strip("-• ").strip())
+        for l in (ai_insight or "").split("\n")
+        if l.strip() and not l.strip().startswith("---")
+    ]
     insight_html = "".join(
         "<div style='display:flex;gap:8px;margin:7px 0;font-size:13px;line-height:1.65;color:rgba(255,255,255,.94)'>"
         f"<span style='color:#ffd166'>●</span><span>{_esc(line)}</span></div>"
-        for line in insight_lines[:4]
+        for line in insight_lines[:6]
+        if line
     ) or "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
 
     # ── 히트맵 헤더
@@ -2901,7 +2913,7 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
     return (
         "<div style='background:#eef2f7;padding:0 0 4px'>"
         # AI 총평 박스
-        "<div style='background:linear-gradient(135deg,#172554 0%,#312e81 58%,#4c1d95 100%);"
+        "<div style='background:linear-gradient(135deg,#1a2e7a 0%,#2d1b69 100%);"
         "border-radius:14px;padding:20px 22px;margin-bottom:18px;color:#fff;"
         "box-shadow:0 10px 28px rgba(30,41,59,.18)'>"
         "<div style='font-size:11px;color:rgba(255,255,255,.58);font-weight:800;"
@@ -2973,6 +2985,15 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
         ai_insight = _generate_monthly_insight(signals, now.year, now.month)
     except Exception:
         ai_insight = "월간 분석 생성 실패 — 수동 검토 필요."
+
+    import re as _re_m
+    def _strip_md_m(t):
+        t = _re_m.sub(r'\#{1,6}\s+', '', t, flags=_re_m.MULTILINE)
+        t = _re_m.sub(r'\*{2,3}(.+?)\*{2,3}', r'\1', t)
+        t = _re_m.sub(r'\*(.+?)\*', r'\1', t)
+        t = _re_m.sub(r'`(.+?)`', r'\1', t)
+        return t.strip()
+    ai_insight = _strip_md_m(ai_insight)
 
     reds    = [s for s in signals if s.action_flag == "red"]
     yellows = [s for s in signals if s.action_flag == "yellow"]
