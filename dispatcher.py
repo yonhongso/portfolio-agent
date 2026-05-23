@@ -3096,11 +3096,24 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
         if s.signal_type not in EXIT_TYPES or s.portfolio_name in exit_seen:
             continue
         exit_seen.add(s.portfolio_name)
-        is_ipo     = "IPO" in (s.signal_type or "")
-        exit_label = "IPO" if is_ipo else "M&A 매각"
-        exit_color = "#0e7490" if is_ipo else "#dc2626"
-        exit_bg    = "#cffafe" if is_ipo else "#fee2e2"
-        timing     = "2026 H2" if is_ipo else "2026 Q2"
+        content    = (s.summary_ko or s.title or "").lower()
+        stype      = (s.signal_type or "")
+        is_ipo     = ("ipo" in stype.lower() or "상장" in stype or
+                      "ipo" in content or "상장" in content or "기업공개" in content)
+        is_ma      = ("m&a" in stype.lower() or "인수" in content or "매각" in content)
+        if is_ipo:
+            exit_label = "IPO·상장"
+            exit_color = "#0e7490"
+            exit_bg    = "#cffafe"
+        elif is_ma:
+            exit_label = "M&A·인수"
+            exit_color = "#dc2626"
+            exit_bg    = "#fee2e2"
+        else:
+            exit_label = stype or "Exit"
+            exit_color = "#7c3aed"
+            exit_bg    = "#ede9fe"
+        timing     = "모니터링 중"
         status_txt = ((s.summary_ko or "")[:30] + "…") if s.summary_ko else "모니터링 중"
         exit_cards += (
             f"<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;"
