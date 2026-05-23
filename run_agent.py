@@ -122,12 +122,17 @@ if not monthly_signals:
     monthly_signals = signals
 
 # ── published_at 기준 날짜 필터 적용
-# Daily  : 24시간 이내 기사만
+# Daily  : 평일 24시간 / 월요일은 72시간(토·일 포함)
 # Weekly : 7일 이내 기사만
 # Monthly: 30일 이내 기사만
-signals         = filter_by_published(signals, days=1)
+_is_monday = datetime.now(timezone.utc).weekday() == 0  # 0 = 월요일
+_daily_days = 3 if _is_monday else 1
+signals         = filter_by_published(signals, days=_daily_days)
 weekly_signals  = filter_by_published(weekly_signals, days=7)
 monthly_signals = filter_by_published(monthly_signals, days=30)
+
+if _is_monday:
+    print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
 
 print("filtered → daily: {} / weekly: {} / monthly: {}".format(
     len(signals), len(weekly_signals), len(monthly_signals)), flush=True)
