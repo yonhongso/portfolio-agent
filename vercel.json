@@ -1,5 +1,8 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/dashboard.html" }
-  ]
+  ],
+  "functions": {
+    "api/refresh.js": { "runtime": "nodejs20.x" }
+  }
 }

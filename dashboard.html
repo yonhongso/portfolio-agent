@@ -332,6 +332,19 @@
   <!-- ═══ Tab1: 포트폴리오 현황 (이메일과 동일 구조) ═══ -->
   <div id="tab-overview" class="tab-content active">
 
+    <!-- ── 새로고침 버튼 -->
+    <div style="text-align:right;margin:12px 0 4px">
+      <button id="refresh-btn"
+        onclick="triggerRefresh()"
+        style="background:#1e3a5f;color:#fff;border:none;border-radius:8px;
+               padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;
+               display:inline-flex;align-items:center;gap:6px;
+               box-shadow:0 2px 6px rgba(0,0,0,.15);transition:opacity .2s">
+        🔄 지금 업데이트
+      </button>
+      <div id="refresh-msg" style="font-size:11px;color:#64748b;margin-top:5px;display:none"></div>
+    </div>
+
     <!-- 지표 카드: 3개 플래그 -->
     <table width="100%" cellspacing="0" cellpadding="0"
            style="margin:14px 0 10px;border-collapse:separate;border-spacing:8px 0">
@@ -960,6 +973,42 @@
 </div><!-- /main-content -->
 
 <script>
+  function triggerRefresh() {
+    const btn = document.getElementById('refresh-btn');
+    const msg = document.getElementById('refresh-msg');
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.textContent = '⏳ 업데이트 중...';
+    msg.style.display = 'block';
+    msg.style.color = '#64748b';
+    msg.textContent = 'GitHub Actions를 실행하고 있습니다...';
+
+    fetch('/api/refresh', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          btn.textContent = '✅ 요청 완료';
+          msg.style.color = '#16a34a';
+          msg.textContent = '약 2~3분 후 페이지를 새로고침(F5)하면 최신 기사가 반영됩니다.';
+          // 3분 후 자동 새로고침
+          setTimeout(() => { location.reload(); }, 180000);
+        } else {
+          btn.textContent = '❌ 오류 발생';
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          msg.style.color = '#dc2626';
+          msg.textContent = data.error || '알 수 없는 오류가 발생했습니다.';
+        }
+      })
+      .catch(err => {
+        btn.textContent = '❌ 연결 실패';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        msg.style.color = '#dc2626';
+        msg.textContent = '서버 연결에 실패했습니다: ' + err.message;
+      });
+  }
+
   function showTab(id, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
