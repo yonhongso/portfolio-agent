@@ -188,7 +188,7 @@ dispatch:
     user: "${SMTP_USER}"
     password: "${SMTP_PASSWORD}"
     from_name: "포트폴리오 인텔리전스"
-    from_address: "portfolio-agent@company.com"
+    from_address: "yonhongso@gmail.com"
 
 # =============================================================================
 # 5. 분류 임계값
@@ -270,4 +270,4 @@ logging:
 # SMTP_USER=...
 # SMTP_PASSWORD=...
 # ANTHROPIC_API_KEY=...
-# DATABASE_URL=postgresql://...  (sqlite 사용 시 불필요)
+# DATABASE_URL=postgresql://...  (sqlite 사용 시 불필요)        

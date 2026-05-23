@@ -298,7 +298,18 @@
   <div class="topbar">
     <div>
       <h1>📊 Portfolio Intelligence Dashboard</h1>
-      <div class="meta">CONFIDENTIAL · 2026-05-19 17:43 기준</div>
+      <div class="meta" id="last-updated-meta">CONFIDENTIAL · <span id="current-datetime"></span> 기준</div>
+      <script>
+        (function(){
+          var now = new Date();
+          var yyyy = now.getFullYear();
+          var mm = String(now.getMonth()+1).padStart(2,'0');
+          var dd = String(now.getDate()).padStart(2,'0');
+          var hh = String(now.getHours()).padStart(2,'0');
+          var min = String(now.getMinutes()).padStart(2,'0');
+          document.getElementById('current-datetime').textContent = yyyy+'-'+mm+'-'+dd+' '+hh+':'+min;
+        })();
+      </script>
     </div>
   </div>
 
@@ -965,19 +976,4 @@
   }
   function copyText(id, btn) {
     const el = document.getElementById(id);
-    if (!el) return;
-    navigator.clipboard.writeText(el.innerText).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ 복사됨';
-      btn.style.background = '#27ae60';
-      setTimeout(() => { btn.textContent = orig; btn.style.background = '#8e44ad'; }, 2000);
-    });
-  }
-  function copyDraft(text, btn) {
-    navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = '✓ 복사됨';
-      setTimeout(() => { btn.textContent = '📋 복사'; }, 2000);
-    });
-  }
-</script>
-</body></html>
+    if (!el) r

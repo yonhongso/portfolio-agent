@@ -30,6 +30,9 @@ from typing import Optional
 
 import requests
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()  # .env 파일 로드 → 환경변수 주입
 
 from classifier_groq import ClassifiedSignal
 from collector import load_config
@@ -1816,69 +1819,8 @@ class Dispatcher:
             yellow_count=len(yellows),
         )
 
-        # ── 브라우저 대시보드와 동일한 구성: Daily + Weekly + Monthly (초안 제외)
-        daily_html   = _build_daily_overview_section(signals, generated_at)
-        weekly_html  = _build_weekly_section(_weekly, generated_at)
-        monthly_html = _build_monthly_section(_monthly, generated_at)
-
-        now_str = datetime.now().strftime("%Y년 %m월 %d일 %H:%M")
-        html = f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{{font-family:-apple-system,'Segoe UI','Malgun Gothic',sans-serif;
-       background:#f0f2f5;margin:0;padding:16px}}
-  .wrap{{max-width:820px;margin:0 auto}}
-  .sec-title{{font-size:13px;font-weight:800;color:#475569;letter-spacing:1px;
-              text-transform:uppercase;padding:18px 0 8px;border-bottom:2px solid #e2e8f0;
-              margin-bottom:14px}}
-  .flag-red{{background:#fef2f2;border:1.5px solid #fca5a5;border-radius:6px;
-             padding:3px 9px;font-size:11px;font-weight:700;color:#dc2626}}
-  .exec-box{{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;
-             padding:14px 16px;margin-bottom:14px}}
-  .e-label{{font-size:10px;font-weight:800;letter-spacing:1px;color:#64748b;
-            text-transform:uppercase;display:block;margin-bottom:6px}}
-  .e-main{{font-size:13px;color:#1e293b;line-height:1.75;white-space:pre-line}}
-  .section-header{{font-size:12px;font-weight:700;color:#334155;padding:8px 10px;
-                   background:#f8fafc;border-radius:6px;margin:10px 0 8px;
-                   border-left:3px solid #3b82f6}}
-  .white-note{{font-size:12px;color:#94a3b8;text-align:center;padding:10px}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <!-- 헤더 -->
-  <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;
-              border-radius:12px;padding:18px 22px;margin-bottom:20px">
-    <div style="font-size:11px;opacity:.6;margin-bottom:4px">Portfolio Intelligence · {now_str}</div>
-    <div style="font-size:20px;font-weight:800">일간 포트폴리오 모니터링 리포트</div>
-    <div style="font-size:12px;opacity:.7;margin-top:4px">
-      즉시검토 {len(reds)}건 · 동향주시 {len(yellows)}건 · 총 {len(signals)}건
-    </div>
-  </div>
-
-  <!-- ① Daily Overview -->
-  <div class="sec-title">📋 Daily Overview</div>
-  {daily_html}
-
-  <!-- ② Weekly -->
-  <div class="sec-title" style="margin-top:28px">📈 Weekly 분석</div>
-  {weekly_html}
-
-  <!-- ③ Monthly -->
-  <div class="sec-title" style="margin-top:28px">📅 Monthly 총평</div>
-  {monthly_html}
-
-  <!-- 하단 메모 -->
-  <div style="font-size:11px;color:#94a3b8;text-align:center;
-              border-top:1px solid #e2e8f0;padding-top:14px;margin-top:24px">
-    본 리포트는 Portfolio Intelligence Agent가 자동 생성하였습니다.<br>
-    최종 투자 판단은 반드시 직접 검토 후 결정하시기 바랍니다.
-  </div>
-</div>
-</body></html>"""
+        # ── 브라우저와 동일한 렌더러(build_daily_html)로 이메일 HTML 생성
+        html = build_daily_html(signals, date_str)
 
         # dashboard.html 저장 (weekly/monthly 포함)
         save_dashboard(signals, weekly_signals=_weekly, monthly_signals=_monthly)
@@ -3445,3 +3387,4 @@ if __name__ == "__main__":
     disp.send_telegram_alerts(signals)
     disp.send_daily_email(signals)
     print("배포 완료")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
