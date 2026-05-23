@@ -3208,9 +3208,6 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
           "<th style='text-align:left;padding:12px 14px;font-size:11px;color:#fff;font-weight:700'>변화 원인</th>"
           "</tr></thead>"
         + f"<tbody>{risk_rows}</tbody></table></div>"
-        # ── M3
-        + _section_hd("🚀", "Exit 파이프라인 현황", "#27ae60")
-        + f"<div style='margin-bottom:20px'>{exit_cards}</div>"
         # ── M4
         + _section_hd("📝", "이달 팀 액션 로그", "#7f8c8d")
         + f"<div style='margin-bottom:20px'>{action_log}</div>"
