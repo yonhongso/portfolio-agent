@@ -1031,17 +1031,27 @@ def _call_claude(prompt: str,
         return ""
 
 
-_WEEKLY_INSIGHT_PROMPT = """당신은 벤처캐피탈 사업개발팀의 시니어 투자 분석가입니다.
+_WEEKLY_INSIGHT_PROMPT = """당신은 SK네트웍스 사업개발팀의 시니어 포트폴리오 담당자입니다.
 아래는 지난 1주일간 포트폴리오사에서 수집된 주요 시그널 목록입니다.
 
 {signals_json}
 
-다음 형식으로 한국어 주간 종합 인사이트를 작성하세요 (총 300자 이내):
-1. 이번 주 가장 중요한 포트폴리오 이슈 (1~2문장)
-2. 투자팀이 이번 주 취해야 할 핵심 액션 (2~3개, 구체적으로)
-3. 다음 주 주시해야 할 리스크 포인트 (1~2개)
+아래 형식을 반드시 지켜 한국어로 작성하세요. 줄글 금지, 보고서 항목 형식으로 작성.
 
-JSON 없이 자연스러운 문단 형식으로 작성하세요."""
+[핵심 이슈]
+▪ {기업명}: {이슈 핵심을 15자 내외 명사형으로}
+▪ {기업명}: {이슈 핵심을 15자 내외 명사형으로}
+(이슈가 있는 기업만, 최대 3개)
+
+[팔로업 사항]
+① {구체적 확인·검토 액션, 담당자/대상 명시}
+② {구체적 확인·검토 액션}
+(2~3개, 특정 팀이 아닌 포트폴리오 관리 관점으로)
+
+[다음 주 모니터링 포인트]
+▸ {리스크 또는 주시 사항 1~2개, 간결하게}
+
+JSON 없이 위 포맷 그대로 출력하세요."""
 
 
 _MONTHLY_INSIGHT_PROMPT = """당신은 벤처캐피탈 사업개발팀의 수석 포트폴리오 분석가입니다.
@@ -2737,14 +2747,25 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         t = _re.sub(r'`(.+?)`', r'\1', t)
         return t.strip()
     insight_lines = [
-        _strip_md(l.strip("-• ").strip())
+        _strip_md(l.strip())
         for l in (ai_insight or "").split("\n")
         if l.strip() and not l.strip().startswith("---")
     ]
+    def _insight_line_html(line):
+        is_header = line.startswith("[") and "]" in line
+        if is_header:
+            return (
+                "<div style='margin:10px 0 4px;font-size:11px;font-weight:800;"
+                "color:rgba(255,255,255,.55);letter-spacing:.6px'>"
+                f"{_esc(line)}</div>"
+            )
+        return (
+            "<div style='margin:3px 0;font-size:12.5px;line-height:1.65;"
+            f"color:rgba(255,255,255,.92)'>{_esc(line)}</div>"
+        )
     insight_html = "".join(
-        "<div style='margin:7px 0;font-size:13px;line-height:1.65;color:rgba(255,255,255,.94)'>"
-        f"<span>{_esc(line)}</span></div>"
-        for line in insight_lines[:6]
+        _insight_line_html(line)
+        for line in insight_lines
         if line
     ) or "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
 
