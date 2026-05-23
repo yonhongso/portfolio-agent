@@ -2243,9 +2243,10 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
         }.get(flag, ("white", "⚪", ""))
         cls, label, sub = cfg
         return (
-            f'<div class="flag-section {cls}">'
-            f'{label} <span style="font-size:10px;font-weight:500;opacity:.7">{sub}</span>'
-            f'<span class="count-pill">{count}건</span></div>'
+            f'<div class="flag-banner {cls}">'
+            f'<div><span class="fb-label">{label}</span>'
+            f'<span class="fb-sub">{sub}</span></div>'
+            f'<span class="fb-pill">{count}건</span></div>'
         )
 
     red_co: dict[str, list] = defaultdict(list)
@@ -2998,7 +2999,7 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
 
     return f"""
     <!-- 월간 요약 헤더 -->
-    <div style="background:linear-gradient(135deg,#1a2744,#2c3e6b);border-radius:10px;padding:18px 20px;margin-bottom:16px;color:#fff">
+    <div style="background:linear-gradient(135deg,#1a3a2e,#0d2137);border-radius:12px;padding:20px 24px;margin-bottom:24px;color:#fff">
       <div style="font-size:11px;opacity:.6;margin-bottom:4px">{now.year}년 {now.month}월 포트폴리오 총평</div>
       <div style="font-size:18px;font-weight:700">Monthly Portfolio Review</div>
       <div style="font-size:12px;opacity:.7;margin-top:6px">총 {len(signals)}건 시그널 · 즉시검토 {len(reds)}건 · 동향주시 {len(yellows)}건</div>
@@ -3120,9 +3121,10 @@ def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at:
 
     def _flag_banner(flag, label, sub, count):
         return (
-            f'<div class="flag-section {flag}">'
-            f'{label} <span style="font-size:10px;font-weight:500;opacity:.7">{sub}</span>'
-            f'<span class="count-pill">{count}건</span></div>'
+            f'<div class="flag-banner {flag}">'
+            f'<div><span class="fb-label">{label}</span>'
+            f'<span class="fb-sub">{sub}</span></div>'
+            f'<span class="fb-pill">{count}건</span></div>'
         )
 
     red_co: dict = _dd(list)
@@ -3142,6 +3144,14 @@ def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at:
     if yellow_co:
         cards_html += _flag_banner("yellow", "🟡 동향주시", "Watch & Report", len(yellows))
         for co, sigs in _sort_co(yellow_co):
+            cards_html += _company_section_html(co, sigs)
+    white_co: dict = _dd(list)
+    for s in signals:
+        if s.action_flag == "white":
+            white_co[s.portfolio_name].append(s)
+    if white_co:
+        cards_html += _flag_banner("white", "⚪ 정기모니터링", "Routine Track", len(whites))
+        for co, sigs in _sort_co(white_co):
             cards_html += _company_section_html(co, sigs)
     if not cards_html:
         cards_html = '<div style="text-align:center;padding:24px;color:#adb5bd;font-size:13px">오늘 검토 항목 없음 · No items today</div>'
