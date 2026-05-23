@@ -2675,7 +2675,7 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         text = " ".join(str(text or "").split())
         return text if len(text) <= limit else text[:limit].rstrip() + "…"
     def _parse_date(s):
-        for fn in ("classified_at", "published_at", "created_at"):
+        for fn in ("published_at", "classified_at", "created_at"):
             raw = getattr(s, fn, None)
             if not raw:
                 continue
@@ -2895,14 +2895,10 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         em = "🔴" if f == "red" else "🟡" if f == "yellow" else "⚪"
         snippet = _truncate(_summary(top_item), 68)
         monitoring_items += (
-            f"<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9'>"
-            f"<div style='width:24px;height:24px;border-radius:50%;background:#f8fafc;"
-            f"text-align:center;line-height:24px;font-size:11px;font-weight:900;color:#475569'>{idx}</div>"
-            f"<div style='flex:1;font-size:12px;line-height:1.55;color:#475569'>"
-            f"<div><span style='color:{fc};font-weight:900'>{em} {_esc(co)}</span>"
-            f" <span style='color:#94a3b8'>· {FLAG_TEXT.get(f, '정기모니터링')}</span></div>"
-            f"<div style='margin-top:3px'>{_esc(snippet)}</div>"
-            f"</div></div>"
+            f"<div style='padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;line-height:1.6'>"
+            f"<span style='color:{fc};font-weight:900'>{em} {_esc(co)}</span>"
+            f"<span style='color:#475569'> — {_esc(snippet)}</span>"
+            f"</div>"
         )
     if not monitoring_items:
         monitoring_items = (
@@ -2950,27 +2946,24 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         "</table></div>"
         # 범례
         f"<div style='margin:6px 2px 18px'>{heatmap_legend}</div>"
-        # 하단 2컬럼
-        "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px'>"
-        # 수렴 시그널
-        "<div>"
+        # 수렴 시그널 (풀너비)
+        "<div style='margin-bottom:18px'>"
         "<div style='font-size:13px;font-weight:900;color:#0f172a;"
         "padding:4px 0 9px 12px;border-left:4px solid #8e44ad;margin-bottom:12px'>"
         "⚡ 수렴 시그널 분석"
         "<span style='font-size:11px;font-weight:600;color:#64748b;margin-left:6px'>"
-        "동일 기업 내 복수 리스크/반복 노출 최대 3건</span></div>"
+        "동일 기업에서 복수 리스크 카테고리가 동시 발생한 경우</span></div>"
         f"{convergence_cards}"
         "</div>"
-        # 다음 주 모니터링
-        "<div>"
+        # 다음 주 모니터링 (풀너비)
+        "<div style='margin-bottom:8px'>"
         "<div style='font-size:13px;font-weight:900;color:#0f172a;"
         "padding:4px 0 9px 12px;border-left:4px solid #f39c12;margin-bottom:12px'>"
-        f"🎯 다음 주 모니터링 포인트 ({_fmt_md(next_monday)}~{_fmt_md(next_friday)})"
+        f"📌 다음 주 모니터링 포인트 ({_fmt_md(next_monday)}~{_fmt_md(next_friday)})"
         "</div>"
-        "<div style='background:#fffbea;border:1.5px solid #f39c12;border-radius:10px;padding:8px 14px'>"
+        "<div style='background:#fffbea;border:1.5px solid #f39c12;border-radius:10px;padding:10px 16px'>"
         f"{monitoring_items}"
         "</div></div>"
-        "</div>"  # grid end
         "</div>"  # outer end
     )
 
