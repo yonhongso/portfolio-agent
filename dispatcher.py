@@ -3332,7 +3332,7 @@ def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
             <span style="font-size:11px;color:#6c757d">▼ 펼치기</span>
           </div>
           <div style="display:none;padding:12px 14px">
-            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px">{text}</pre>
+            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px;font-family:'Malgun Gothic','맑은 고딕',sans-serif">{text}</pre>
             <button onclick="navigator.clipboard.writeText('{esc}').then(()=>{{this.textContent='✓ 복사됨';setTimeout(()=>this.textContent='복사',2000)}})"
                     style="font-size:11px;padding:5px 16px;background:#1a2744;color:#fff;border:none;border-radius:5px;cursor:pointer">복사</button>
           </div>
