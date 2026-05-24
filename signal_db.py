@@ -155,6 +155,45 @@ class SignalDB:
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         return self._fetch(since)
 
+    def get_daily(self) -> list:
+        """Daily 탭 전용 — published_at 기준으로 최근 1일(월요일 3일) 이내 기사만 반환.
+        saved_at 기준인 get_recent()와 달리, seed된 과거 기사가 섞이지 않음."""
+        from classifier_groq import ClassifiedSignal
+        is_monday = datetime.now(timezone.utc).weekday() == 0
+        days = 3 if is_monday else 1
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM signals
+                WHERE published_at >= ?
+                ORDER BY published_at DESC
+            """, [cutoff]).fetchall()
+        result = []
+        for r in rows:
+            try:
+                result.append(ClassifiedSignal(
+                    portfolio_id   = r["portfolio_id"],
+                    portfolio_name = r["portfolio_name"],
+                    url            = r["url"] or "",
+                    title          = r["title"] or "",
+                    summary        = r["summary_ko"] or "",
+                    source         = r["source"] or "",
+                    source_tier    = r["source_tier"] or 2,
+                    published_at   = r["published_at"] or "",
+                    sentiment      = r["sentiment"] or "",
+                    signal_type    = r["signal_type"] or "기타",
+                    action_flag    = r["action_flag"] or "white",
+                    relevance      = r["relevance"] or "",
+                    summary_ko     = r["summary_ko"] or "",
+                    summary_en     = r["summary_en"] or "",
+                    classified_at  = r["classified_at"] or "",
+                    model_used     = r["model_used"] or "",
+                    content_hash   = r["content_hash"],
+                ))
+            except Exception as e:
+                logger.warning(f"[SignalDB] 행 복원 실패: {e}")
+        return result
+
     def get_weekly(self) -> list:
         return self.get_recent(days=7)
 

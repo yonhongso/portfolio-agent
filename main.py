@@ -107,15 +107,18 @@ def _collect_classify(collector, classifier) -> list:
     return signals
 
 
-def _save_and_refresh(signals, dispatcher):
-    """DB 저장 + 대시보드 갱신 (공통)."""
+def _save_and_refresh(signals, dispatcher, daily_signals=None):
+    """DB 저장 + 대시보드 갱신 (공통).
+    daily_signals: Daily 탭 전용 (날짜 필터된 오늘 기사). None이면 signals 사용."""
     from signal_db import SignalDB
     db = SignalDB()
-    db.upsert(signals)
+    db.upsert(signals)  # DB에는 전체 저장
+    _daily = daily_signals if daily_signals is not None else signals
     try:
+        daily_from_db   = db.get_daily()   or _daily   # published_at 기준 (seed 기사 자동 제외)
         weekly_signals  = db.get_weekly()  or signals
         monthly_signals = db.get_monthly() or signals
-        save_dashboard(signals,
+        save_dashboard(daily_from_db,      # Daily 탭 = published_at 기준 오늘 기사만
                        weekly_signals=weekly_signals,
                        monthly_signals=monthly_signals)
     except Exception as e:
@@ -131,7 +134,7 @@ def run_once(collector, classifier, dispatcher):
     fresh = _filter_by_published(signals, days=3 if _is_monday else 1)
     dispatcher.send_telegram_alerts(fresh)
     dispatcher.send_daily_email(fresh)
-    _save_and_refresh(signals, dispatcher)
+    _save_and_refresh(signals, dispatcher, daily_signals=fresh)  # 대시보드엔 오늘 기사만
 
 
 def run_daily(collector, classifier, dispatcher):
@@ -142,7 +145,7 @@ def run_daily(collector, classifier, dispatcher):
     fresh = _filter_by_published(signals, days=3 if _is_monday else 1)
     dispatcher.send_telegram_alerts(fresh)
     dispatcher.send_daily_email(fresh)
-    _save_and_refresh(signals, dispatcher)
+    _save_and_refresh(signals, dispatcher, daily_signals=fresh)  # 대시보드엔 오늘 기사만
 
 
 def run_weekly(collector, classifier, dispatcher):
