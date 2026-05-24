@@ -2,8 +2,9 @@
 .env
 
 # 데이터베이스 캐시 (캐시 DB는 제외, 시그널 JSON은 허용)
-data/
-!data/signals_*.json
+# ※ data/ 전체 무시 시 !data/signals_*.json 예외가 git에서 동작 안 함 → 개별 파일 패턴으로 지정
+data/*.db
+data/cache*
 *.db
 
 # Python 캐시

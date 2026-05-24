@@ -17,7 +17,7 @@ import os
 import sys
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import schedule
 from dotenv import load_dotenv
@@ -27,6 +27,25 @@ load_dotenv()
 from collector       import Collector
 from classifier_groq import Classifier
 from dispatcher      import Dispatcher, save_dashboard
+
+
+def _filter_by_published(signals, days: int) -> list:
+    """published_at 기준 days일 이내 시그널만 반환 (Telegram 과거 기사 방지)."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    result = []
+    for s in signals:
+        try:
+            pub = s.published_at
+            if not pub:
+                continue
+            pub_dt = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+            if pub_dt.tzinfo is None:
+                pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+            if pub_dt >= cutoff:
+                result.append(s)
+        except Exception:
+            pass
+    return result or signals  # 전부 필터링되면 원본 반환
 
 
 # ── 로깅 ──────────────────────────────────────────────────────────────────────
@@ -91,10 +110,14 @@ def _collect_classify(collector, classifier) -> list:
 def _save_and_refresh(signals, dispatcher):
     """DB 저장 + 대시보드 갱신 (공통)."""
     from signal_db import SignalDB
-    SignalDB().upsert(signals)
+    db = SignalDB()
+    db.upsert(signals)
     try:
-        from build_live_dashboard import main as build_live
-        build_live()
+        weekly_signals  = db.get_weekly()  or signals
+        monthly_signals = db.get_monthly() or signals
+        save_dashboard(signals,
+                       weekly_signals=weekly_signals,
+                       monthly_signals=monthly_signals)
     except Exception as e:
         logger.warning(f"대시보드 갱신 실패 (무시): {e}")
 
@@ -103,7 +126,11 @@ def run_once(collector, classifier, dispatcher):
     signals = _collect_classify(collector, classifier)
     if not signals:
         return
-    dispatcher.send_telegram_alerts(signals)
+    # 월요일은 토·일 포함 72시간, 평일은 24시간 이내 기사만 발송
+    _is_monday = datetime.now(timezone.utc).weekday() == 0
+    fresh = _filter_by_published(signals, days=3 if _is_monday else 1)
+    dispatcher.send_telegram_alerts(fresh)
+    dispatcher.send_daily_email(fresh)
     _save_and_refresh(signals, dispatcher)
 
 
@@ -111,8 +138,10 @@ def run_daily(collector, classifier, dispatcher):
     signals = _collect_classify(collector, classifier)
     if not signals:
         return
-    dispatcher.send_telegram_alerts(signals)
-    dispatcher.send_daily_email(signals)
+    _is_monday = datetime.now(timezone.utc).weekday() == 0
+    fresh = _filter_by_published(signals, days=3 if _is_monday else 1)
+    dispatcher.send_telegram_alerts(fresh)
+    dispatcher.send_daily_email(fresh)
     _save_and_refresh(signals, dispatcher)
 
 
