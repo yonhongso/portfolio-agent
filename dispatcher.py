@@ -1863,6 +1863,22 @@ class Dispatcher:
         for s in reds:
             self.telegram.send_signal(s)
 
+    # ── 텔레그램 "기사 없음" 알림
+    def send_telegram_no_news(self):
+        """오늘 수집된 기사가 없을 때 텔레그램으로 알림."""
+        if not self.cfg["dispatch"]["telegram"]["enabled"]:
+            return
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        msg = (
+            f"📭 <b>포트폴리오 모니터링 — {date_str}</b>\n\n"
+            f"오늘 수집된 포트폴리오사 관련 기사가 없습니다."
+        )
+        try:
+            self.telegram._send(msg)
+            logger.info("[Telegram] 기사 없음 알림 발송 완료")
+        except Exception as e:
+            logger.warning(f"[Telegram] 기사 없음 알림 실패: {e}")
+
     # ── Daily 이메일 (HTML 대시보드 + PDF 첨부)
     def send_daily_email(self, signals: list[ClassifiedSignal],
                           weekly_signals: Optional[list] = None,

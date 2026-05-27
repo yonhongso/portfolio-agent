@@ -157,7 +157,11 @@ except Exception as e:
 
 print("[3/3] telegram alerts...", flush=True)
 try:
-    dispatcher.send_telegram_alerts(signals)
+    if signals:
+        dispatcher.send_telegram_alerts(signals)
+    else:
+        # 수집된 기사 없을 때도 텔레그램 알림 발송
+        dispatcher.send_telegram_no_news()
     print("telegram OK", flush=True)
 except Exception as e:
     print("telegram FAIL (계속 진행): {}".format(e), flush=True)

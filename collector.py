@@ -283,6 +283,55 @@ class GoogleNewsCollector:
             return datetime.now(timezone.utc)
 
 
+class NaverNewsCollector:
+    """
+    네이버 뉴스 RSS 피드 기반 수집.
+    국내사(KR) 전용. API 키 불필요. 무료. 소스 계층 2.
+    Google News 대비 국내 뉴스(더팩트, 아이뉴스24 등) 인덱싱이 빠름.
+    """
+    TIER = 2
+    BASE_URL = "https://search.naver.com/rss.naver?where=news&query={query}&sort=1&display=10"
+
+    def collect(self, portfolio: Portfolio) -> list[RawArticle]:
+        if portfolio.country != "KR":
+            return []   # 국내사만 대상
+
+        articles = []
+        queries = portfolio.keywords_primary
+        for idx_q, query in enumerate(queries):
+            if idx_q > 0:
+                time.sleep(0.3)
+            url = self.BASE_URL.format(query=quote_plus(query))
+            try:
+                feed = feedparser.parse(url)
+                for entry in feed.entries[:10]:
+                    title   = entry.get("title", "")
+                    summary = entry.get("description", entry.get("summary", ""))
+                    # 네이버 RSS description에는 HTML 태그 포함 → 제거
+                    summary = re.sub(r"<[^>]+>", "", summary).strip()
+                    articles.append(RawArticle(
+                        url=entry.get("link", ""),
+                        title=title,
+                        summary=summary,
+                        content=summary,
+                        source="naver_news",
+                        source_tier=self.TIER,
+                        published_at=self._parse_date(entry.get("pubDate", "")),
+                        portfolio_id=portfolio.id,
+                        lang="ko",
+                    ))
+            except Exception as e:
+                logger.warning(f"[NaverNews] {query}: {e}")
+        return articles
+
+    @staticmethod
+    def _parse_date(s: str) -> datetime:
+        try:
+            import email.utils
+            return datetime(*email.utils.parsedate(s)[:6], tzinfo=timezone.utc)
+        except Exception:
+            return datetime.now(timezone.utc)
+
 
 class TechCrunchCollector:
     """
@@ -493,6 +542,7 @@ class Collector:
         import os
         self.collectors = {
             "google_news": GoogleNewsCollector(),
+            "naver_news":  NaverNewsCollector(),
             "dart":        DartCollector(os.getenv("DART_API_KEY", "")),
             "crunchbase":  CrunchbaseCollector(os.getenv("CRUNCHBASE_API_KEY", "")),
             "twitter_x":   TwitterXCollector(os.getenv("TWITTER_BEARER_TOKEN", "")),
@@ -557,7 +607,3 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s [%(levelname)s] %(message)s")
     collector = Collector()
-    articles  = collector.run()
-    print(f"\n최종 LLM 분류 대상: {len(articles)}건")
-    for a in articles[:3]:
-        print(f"  [{a.source}] {a.title[:60]}")

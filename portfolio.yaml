@@ -5,6 +5,7 @@ defaults:
   sources:
     dart: false
     google_news: true
+    naver_news: true
     linkedin: true
     crunchbase: true
     twitter_x: false
