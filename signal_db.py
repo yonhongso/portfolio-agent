@@ -195,10 +195,48 @@ class SignalDB:
         return result
 
     def get_weekly(self) -> list:
-        return self.get_recent(days=7)
+        """Weekly 탭 — published_at 기준 7일 이내 기사만 반환."""
+        return self._fetch_by_published(days=7)
 
     def get_monthly(self) -> list:
-        return self.get_recent(days=30)
+        """Monthly 탭 — published_at 기준 30일 이내 기사만 반환."""
+        return self._fetch_by_published(days=30)
+
+    def _fetch_by_published(self, days: int) -> list:
+        """published_at 기준 필터 — seed된 과거 기사 혼입 방지."""
+        from classifier_groq import ClassifiedSignal
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM signals
+                WHERE published_at >= ?
+                ORDER BY published_at DESC
+            """, [cutoff]).fetchall()
+        result = []
+        for r in rows:
+            try:
+                result.append(ClassifiedSignal(
+                    portfolio_id   = r["portfolio_id"],
+                    portfolio_name = r["portfolio_name"],
+                    url            = r["url"] or "",
+                    title          = r["title"] or "",
+                    summary        = r["summary_ko"] or "",
+                    source         = r["source"] or "",
+                    source_tier    = r["source_tier"] or 2,
+                    published_at   = r["published_at"] or "",
+                    sentiment      = r["sentiment"] or "",
+                    signal_type    = r["signal_type"] or "기타",
+                    action_flag    = r["action_flag"] or "white",
+                    relevance      = r["relevance"] or "",
+                    summary_ko     = r["summary_ko"] or "",
+                    summary_en     = r["summary_en"] or "",
+                    classified_at  = r["classified_at"] or "",
+                    model_used     = r["model_used"] or "",
+                    content_hash   = r["content_hash"],
+                ))
+            except Exception as e:
+                logger.warning(f"[SignalDB] 행 복원 실패: {e}")
+        return result
 
     def summary_stats(self, days: int = 30) -> dict:
         """기간별 통계 (대시보드 헤더용)."""
