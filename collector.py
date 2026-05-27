@@ -557,7 +557,7 @@ class Collector:
                 try:
                     fetched = collector.collect(portfolio)
                     raw.extend(fetched)
-                    logger.debug(f"  [{portfolio.name}] {source_name}: {len(fetched)}건")
+                    logger.info(f"  [{portfolio.name}] {source_name}: {len(fetched)}건")
                 except Exception as e:
                     logger.warning(f"  [{portfolio.name}] {source_name} 수집 오류: {e}")
         passed = [a for a in raw if self.pre_filter.passes(a, portfolio)]

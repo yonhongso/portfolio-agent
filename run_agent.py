@@ -37,6 +37,7 @@ try:
     from collector import Collector
     from classifier_groq import Classifier, ClassifiedSignal
     from dispatcher import Dispatcher, save_dashboard
+    from signal_db import SignalDB
     print("module load OK", flush=True)
 except Exception as e:
     print(f"module load FAIL: {e}", flush=True)
@@ -109,12 +110,19 @@ except Exception as e:
     print("signals save FAIL (continuing): {}".format(e), flush=True)
 
 try:
-    weekly_signals  = load_historical_signals(7)
-    monthly_signals = load_historical_signals(30)
+    db = SignalDB()
+    weekly_signals  = db.get_weekly()   or signals
+    monthly_signals = db.get_monthly()  or signals
+    print("weekly: {}건 / monthly: {}건 (DB, published_at 기준)".format(
+        len(weekly_signals), len(monthly_signals)), flush=True)
 except Exception as e:
-    print("historical load FAIL (using today): {}".format(e), flush=True)
-    weekly_signals  = signals
-    monthly_signals = signals
+    print("SignalDB load FAIL, JSON fallback: {}".format(e), flush=True)
+    try:
+        weekly_signals  = load_historical_signals(7)
+        monthly_signals = load_historical_signals(30)
+    except Exception as e2:
+        weekly_signals  = signals
+        monthly_signals = signals
 
 if not weekly_signals:
     weekly_signals = signals
@@ -127,9 +135,7 @@ if not monthly_signals:
 # Monthly: 30일 이내 기사만
 _is_monday = datetime.now(timezone.utc).weekday() == 0  # 0 = 월요일
 _daily_days = 3 if _is_monday else 1
-signals         = filter_by_published(signals, days=_daily_days)
-weekly_signals  = filter_by_published(weekly_signals, days=7)
-monthly_signals = filter_by_published(monthly_signals, days=30)
+signals = filter_by_published(signals, days=_daily_days)
 
 if _is_monday:
     print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
