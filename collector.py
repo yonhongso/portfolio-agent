@@ -557,11 +557,11 @@ class Collector:
                 try:
                     fetched = collector.collect(portfolio)
                     raw.extend(fetched)
-                    logger.info(f"  [{portfolio.name}] {source_name}: {len(fetched)}건")
+                    print(f"  [{portfolio.name}] {source_name}: {len(fetched)}건", flush=True)
                 except Exception as e:
                     logger.warning(f"  [{portfolio.name}] {source_name} 수집 오류: {e}")
         passed = [a for a in raw if self.pre_filter.passes(a, portfolio)]
-        logger.info(f"[{portfolio.name}] {len(passed)}/{len(raw)}건 통과")
+        print(f"[{portfolio.name}] {len(passed)}/{len(raw)}건 통과", flush=True)
         return raw, passed
 
     def run(self, max_workers: int = 5) -> list[RawArticle]:
@@ -574,7 +574,7 @@ class Collector:
         all_raw: list[RawArticle]    = []
         all_passed: list[RawArticle] = []
 
-        logger.info(f"[수집 시작] {len(self.portfolios)}개사 병렬 수집 (workers={max_workers})")
+        print(f"[수집 시작] {len(self.portfolios)}개사 병렬 수집 (workers={max_workers})", flush=True)
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
@@ -607,3 +607,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s [%(levelname)s] %(message)s")
     collector = Collector()
+ 

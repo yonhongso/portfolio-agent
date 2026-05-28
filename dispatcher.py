@@ -1858,9 +1858,8 @@ class Dispatcher:
         if not self.cfg["dispatch"]["telegram"]["enabled"]:
             return
         self.store.update(signals)          # /status, /report 명령어용 캐시 갱신
-        reds = [s for s in signals if s.action_flag == "red"]
-        logger.info(f"[Telegram] 🔴 즉시 알림 대상: {len(reds)}건")
-        for s in reds:
+        print(f"[Telegram] 전체 발송 대상: {len(signals)}건", flush=True)
+        for s in signals:
             self.telegram.send_signal(s)
 
     # ── 텔레그램 "기사 없음" 알림
