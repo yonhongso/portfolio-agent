@@ -694,7 +694,7 @@ def build_daily_html(signals: list[ClassifiedSignal], date_str: str,
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-{_HTML_STYLE}
+{_HTML_STYLE.replace("{{", "{").replace("}}", "}")}
 </head>
 <body>
 <div class="wrapper">
@@ -1310,7 +1310,7 @@ def build_weekly_html(signals: list[ClassifiedSignal], week_range: str,
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-{_HTML_STYLE}
+{_HTML_STYLE.replace("{{", "{").replace("}}", "}")}
 </head>
 <body>
 <div class="wrapper" style="max-width:700px">
@@ -1462,7 +1462,7 @@ def build_monthly_html(signals: list[ClassifiedSignal], year: int, month: int,
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-{_HTML_STYLE}
+{_HTML_STYLE.replace("{{", "{").replace("}}", "}")}
 </head>
 <body>
 <div class="wrapper" style="max-width:750px">
@@ -1934,14 +1934,12 @@ class Dispatcher:
         # ── 브라우저 Daily 탭과 동일한 렌더러로 이메일 HTML 생성
         generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
         daily_content = _build_daily_overview_section(signals, generated_at)
-        health = max(0, 100 - len(reds)*20 - len(yellows)*5)
-        hcolor = "#27ae60" if health >= 80 else "#f39c12" if health >= 60 else "#e74c3c"
         html = f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-{_HTML_STYLE}
+{_HTML_STYLE.replace("{{", "{").replace("}}", "}")}
 <style>
   body {{ background:#edf0f4 }}
   .wrapper {{ max-width:900px }}
@@ -1949,13 +1947,9 @@ class Dispatcher:
     background:linear-gradient(150deg,#0d1b2a,#1a2744);
     border-radius:12px 12px 0 0;
     padding:22px 28px;
-    display:flex; justify-content:space-between; align-items:center;
   }}
   .topbar h1 {{ color:#fff;font-size:20px;font-weight:700 }}
   .topbar .meta {{ color:rgba(255,255,255,.4);font-size:11px;margin-top:4px }}
-  .hbadge {{ background:rgba(255,255,255,.1);border-radius:10px;padding:12px 20px;text-align:center;min-width:90px }}
-  .hbadge .n {{ font-size:28px;font-weight:800;color:{hcolor} }}
-  .hbadge .l {{ font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:1px;margin-top:2px }}
   .tab-bar {{ display:flex;gap:5px;background:#edf0f4;padding:14px 20px 0;border-bottom:none; }}
   .tab-btn-active {{
     padding:13px 30px;font-size:13.5px;font-weight:700;
@@ -1979,14 +1973,8 @@ class Dispatcher:
 
   <!-- 탑바 -->
   <div class="topbar">
-    <div>
-      <h1>📊 Portfolio Intelligence Dashboard</h1>
-      <div class="meta">CONFIDENTIAL &nbsp;·&nbsp; {generated_at} 기준</div>
-    </div>
-    <div class="hbadge">
-      <div class="n">{health}</div>
-      <div class="l">Health</div>
-    </div>
+    <h1>📊 Portfolio Intelligence Dashboard</h1>
+    <div class="meta">CONFIDENTIAL &nbsp;·&nbsp; {generated_at} 기준</div>
   </div>
 
   <!-- 탭 바 (Daily 활성, 이메일이므로 정적) -->
@@ -2552,7 +2540,7 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Portfolio Intelligence Dashboard</title>
-{_HTML_STYLE}
+{_HTML_STYLE.replace("{{", "{").replace("}}", "}")}
 <style>
   /* ── 대시보드 전용 오버라이드 */
   body {{ background:#edf0f4 }}
@@ -2563,7 +2551,6 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
     background:linear-gradient(150deg,#0d1b2a,#1a2744);
     border-radius:12px 12px 0 0;
     padding:22px 28px;
-    display:flex; justify-content:space-between; align-items:center;
   }}
   .topbar h1 {{ color:#fff;font-size:20px;font-weight:700 }}
   .topbar .meta {{ color:rgba(255,255,255,.4);font-size:11px;margin-top:4px }}
@@ -3578,7 +3565,7 @@ def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at:
             text-align:center;border-top:3px solid #adb5bd;
             box-shadow:0 2px 8px rgba(0,0,0,.06)">
           <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">{len(whites)}</div>
-          <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">⚪ 정기모니터링<br><span style="font-size:9px">참고기사 CSV 첨부</span></div>
+          <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">⚪ 정기모니터링<br><span style="font-size:9px">Reference</span></div>
         </td>
       </tr>
     </table>
