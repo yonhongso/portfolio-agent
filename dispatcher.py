@@ -607,8 +607,7 @@ def build_daily_html(signals: list[ClassifiedSignal], date_str: str,
         cards = '<div style="text-align:center;padding:24px;color:#adb5bd;font-size:13px">오늘 검토 항목 없음 · No items today</div>'
 
     white_note = (
-        f'<div class="white-note">⚪ 정기모니터링 {len(whites)}건 — 첨부 PDF 참조 &nbsp;|&nbsp; '
-        f'{len(whites)} routine item(s) included in the attached PDF report.</div>'
+        f'<div class="white-note">⚪ 정기모니터링 {len(whites)}건</div>'
     ) if whites else ""
 
     # ── 커뮤니케이션 초안 섹션 (이메일 섹션 2 — JS 없이 완전 전개)
@@ -1901,23 +1900,87 @@ class Dispatcher:
             yellow_count=len(yellows),
         )
 
-        # ── 브라우저와 동일한 렌더러(build_daily_html)로 이메일 HTML 생성
-        html = build_daily_html(signals, date_str)
+        # ── 브라우저 Daily 탭과 동일한 렌더러로 이메일 HTML 생성
+        generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+        daily_content = _build_daily_overview_section(signals, generated_at)
+        health = max(0, 100 - len(reds)*20 - len(yellows)*5)
+        hcolor = "#27ae60" if health >= 80 else "#f39c12" if health >= 60 else "#e74c3c"
+        html = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+{_HTML_STYLE}
+<style>
+  body {{ background:#edf0f4 }}
+  .wrapper {{ max-width:900px }}
+  .topbar {{
+    background:linear-gradient(150deg,#0d1b2a,#1a2744);
+    border-radius:12px 12px 0 0;
+    padding:22px 28px;
+    display:flex; justify-content:space-between; align-items:center;
+  }}
+  .topbar h1 {{ color:#fff;font-size:20px;font-weight:700 }}
+  .topbar .meta {{ color:rgba(255,255,255,.4);font-size:11px;margin-top:4px }}
+  .hbadge {{ background:rgba(255,255,255,.1);border-radius:10px;padding:12px 20px;text-align:center;min-width:90px }}
+  .hbadge .n {{ font-size:28px;font-weight:800;color:{hcolor} }}
+  .hbadge .l {{ font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:1px;margin-top:2px }}
+  .tab-bar {{ display:flex;gap:5px;background:#edf0f4;padding:14px 20px 0;border-bottom:none; }}
+  .tab-btn-active {{
+    padding:13px 30px;font-size:13.5px;font-weight:700;
+    color:#1a1a2e;background:#ffffff;border:1.5px solid #c8d0da;
+    border-bottom:none;border-radius:10px 10px 0 0;
+    box-shadow:0 -3px 10px rgba(0,0,0,.07);position:relative;letter-spacing:.1px;
+  }}
+  .tab-btn-active::before {{
+    content:'';position:absolute;top:0;left:8px;right:8px;
+    height:3px;background:#c0392b;border-radius:3px 3px 0 0;
+  }}
+  .tab-content-panel {{
+    background:#fff;border:1.5px solid #c8d0da;border-top:none;
+    border-radius:0 0 12px 12px;padding:20px;
+  }}
+  .upd {{ text-align:center;font-size:11px;color:#adb5bd;margin-top:24px;border-top:1px solid #e9ecef;padding-top:14px; }}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- 탑바 -->
+  <div class="topbar">
+    <div>
+      <h1>📊 Portfolio Intelligence Dashboard</h1>
+      <div class="meta">CONFIDENTIAL &nbsp;·&nbsp; {generated_at} 기준</div>
+    </div>
+    <div class="hbadge">
+      <div class="n">{health}</div>
+      <div class="l">Health</div>
+    </div>
+  </div>
+
+  <!-- 탭 바 (Daily 활성, 이메일이므로 정적) -->
+  <div class="tab-bar">
+    <div class="tab-btn-active">📅 Daily</div>
+  </div>
+
+  <!-- Daily 탭 콘텐츠 -->
+  <div class="tab-content-panel">
+    {daily_content}
+  </div>
+
+  <div class="upd">
+    Portfolio Intelligence Agent &nbsp;·&nbsp; 사업개발팀 내부용<br>
+    AI 자동 생성 리포트 — 최종 투자 판단은 반드시 직접 검토 후 결정하시기 바랍니다.
+  </div>
+
+</div>
+</body>
+</html>"""
 
         # dashboard.html 저장 (weekly/monthly 포함)
         save_dashboard(signals, weekly_signals=_weekly, monthly_signals=_monthly)
 
-        # ⚪ 참고기사 CSV 첨부
-        attachments = []
-        if whites:
-            attachments.append((
-                f"참고기사_{date_str}.csv",
-                build_white_csv(whites),
-                "text/csv",
-            ))
-
-        self.email.send(dcfg["recipients"], subject, html,
-                        attachments if attachments else None)
+        self.email.send(dcfg["recipients"], subject, html, None)
 
     # ── 경영층 즉시 보고 (🔴 발생 시 Groq LLM으로 초안 작성 후 자동 발송)
     def send_executive_alert(self, signals: list[ClassifiedSignal]):
@@ -2356,8 +2419,7 @@ def build_dashboard_html(signals: list[ClassifiedSignal], generated_at: str,
         cards = '<div style="text-align:center;padding:24px;color:#adb5bd;font-size:13px">오늘 검토 항목 없음 · No items today</div>'
 
     white_note = (
-        f'<div class="white-note">⚪ 정기모니터링 {len(whites)}건 — 첨부 PDF 참조 &nbsp;|&nbsp; '
-        f'{len(whites)} routine item(s) included in the attached PDF report.</div>'
+        f'<div class="white-note">⚪ 정기모니터링 {len(whites)}건</div>'
     ) if whites else ""
 
     # ── Tab2: 커뮤니케이션 초안
