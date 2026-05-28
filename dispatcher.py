@@ -1857,9 +1857,40 @@ class Dispatcher:
         if not self.cfg["dispatch"]["telegram"]["enabled"]:
             return
         self.store.update(signals)          # /status, /report 명령어용 캐시 갱신
-        print(f"[Telegram] 전체 발송 대상: {len(signals)}건", flush=True)
+
+        reds    = [s for s in signals if s.action_flag == "red"]
+        yellows = [s for s in signals if s.action_flag == "yellow"]
+        whites  = [s for s in signals if s.action_flag == "white"]
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+        # ── 기업별 묶음, 플래그 심각도 순 정렬
+        from collections import defaultdict as _dd
+        by_co = _dd(list)
         for s in signals:
-            self.telegram.send_signal(s)
+            by_co[s.portfolio_name].append(s)
+
+        lines = []
+        for co, co_sigs in sorted(by_co.items(),
+                key=lambda x: (0 if any(s.action_flag=="red" for s in x[1])
+                                else 1 if any(s.action_flag=="yellow" for s in x[1]) else 2,
+                                x[0])):
+            top = sorted(co_sigs, key=lambda s: 0 if s.action_flag=="red" else 1 if s.action_flag=="yellow" else 2)[0]
+            emoji = "🔴" if top.action_flag == "red" else "🟡" if top.action_flag == "yellow" else "⚪"
+            summary = (top.summary_ko or top.title or "")[:50]
+            lines.append(f"{emoji} <b>{co}</b> [{top.signal_type}]\n   {summary}…")
+
+        body = "\n\n".join(lines) if lines else "오늘 특이사항 없음"
+
+        msg = (
+            f"📊 <b>포트폴리오 모니터링 — {date_str}</b>\n"
+            f"🔴 {len(reds)}건 · 🟡 {len(yellows)}건 · ⚪ {len(whites)}건\n\n"
+            f"{body}"
+        )
+        try:
+            self.telegram._send(msg)
+            print(f"[Telegram] 일일 요약 발송 완료 ({len(by_co)}개사)", flush=True)
+        except Exception as e:
+            logger.warning(f"[Telegram] 일일 요약 발송 실패: {e}")
 
     # ── 텔레그램 "기사 없음" 알림
     def send_telegram_no_news(self):
