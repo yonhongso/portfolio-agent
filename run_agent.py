@@ -109,25 +109,31 @@ try:
 except Exception as e:
     print("signals save FAIL (continuing): {}".format(e), flush=True)
 
+# ── DB에 오늘 시그널 저장 (누적)
 try:
     db = SignalDB()
-    weekly_signals  = db.get_weekly()   or signals
-    monthly_signals = db.get_monthly()  or signals
+    saved_count = db.upsert(signals)
+    print("DB upsert: {}건 저장 (중복제외)".format(saved_count), flush=True)
+    weekly_signals  = db.get_weekly()
+    monthly_signals = db.get_monthly()
     print("weekly: {}건 / monthly: {}건 (DB, published_at 기준)".format(
         len(weekly_signals), len(monthly_signals)), flush=True)
 except Exception as e:
-    print("SignalDB load FAIL, JSON fallback: {}".format(e), flush=True)
-    try:
-        weekly_signals  = load_historical_signals(7)
-        monthly_signals = load_historical_signals(30)
-    except Exception as e2:
-        weekly_signals  = signals
-        monthly_signals = signals
+    print("SignalDB FAIL, JSON fallback: {}".format(e), flush=True)
+    weekly_signals  = []
+    monthly_signals = []
 
+# ── JSON 파일 fallback (DB 실패 시)
 if not weekly_signals:
-    weekly_signals = signals
+    try:
+        weekly_signals = load_historical_signals(7)
+    except Exception:
+        weekly_signals = signals
 if not monthly_signals:
-    monthly_signals = signals
+    try:
+        monthly_signals = load_historical_signals(30)
+    except Exception:
+        monthly_signals = signals
 
 # ── published_at 기준 날짜 필터 적용
 # Daily  : 평일 24시간 / 월요일은 72시간(토·일 포함)
@@ -135,7 +141,9 @@ if not monthly_signals:
 # Monthly: 30일 이내 기사만
 _is_monday = datetime.now(timezone.utc).weekday() == 0  # 0 = 월요일
 _daily_days = 3 if _is_monday else 1
-signals = filter_by_published(signals, days=_daily_days)
+signals         = filter_by_published(signals, days=_daily_days)
+weekly_signals  = filter_by_published(weekly_signals,  days=7)
+monthly_signals = filter_by_published(monthly_signals, days=30)
 
 if _is_monday:
     print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
