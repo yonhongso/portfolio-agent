@@ -2803,19 +2803,6 @@ def save_dashboard(signals: list[ClassifiedSignal],
                   f'<!-- META-DATE -->{generated_at}<!-- /META-DATE -->', html)
 
     # ── 커뮤니케이션 초안 배지 숫자 동적 업데이트 (탭 버튼 영역)
-    n_drafts = len([s for s in signals if s.action_flag in ("red", "yellow")])
-    drafts_data_for_badge = drafts_data or []
-    n_real = len([d for d in drafts_data_for_badge
-                  if (d.get("msg_exec") or "").strip() or (d.get("msg_portfolio") or "").strip()])
-    badge_count = n_real if drafts_data_for_badge else n_drafts
-    html = re.sub(
-        r'(커뮤니케이션 초안)<span[^>]*>(\d+)건</span>',
-        lambda m: f'{m.group(1)}<span style="background:#c0392b;color:#fff;font-size:11px;'
-                  f'border-radius:20px;padding:2px 10px;margin-left:8px;vertical-align:middle">'
-                  f'{badge_count}건</span>',
-        html
-    )
-
     with open(path, "w", encoding="utf-8") as f:
         f.write(html)
     logger.info(f"[Dashboard] 업데이트 완료 → {path} ({generated_at})")
@@ -3402,7 +3389,7 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
 
 
 def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
-    """커뮤니케이션 초안 탭 내부 콘텐츠 생성."""
+    """커뮤니케이션 초안 — Daily 탭 하단 섹션으로 표시."""
     reds    = [s for s in signals if s.action_flag == "red"][:6]
     yellows = [s for s in signals if s.action_flag == "yellow"][:4]
 
@@ -3410,8 +3397,15 @@ def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
     target_signals = reds if reds else yellows
     flag_label = "🔴 즉시검토" if reds else "🟡 동향주시"
 
+    section_header = (
+        '<div class="section-header" style="margin-top:20px">'
+        '<span>📱 커뮤니케이션 초안 &nbsp;|&nbsp; Communication Draft</span>'
+        '</div>'
+    )
+
     if not target_signals:
         return (
+            section_header +
             '<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">'
             '오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br>'
             '<span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>'
@@ -3452,7 +3446,7 @@ def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
         {_card('📧 포트폴리오사 대표 연락용', msg_portfolio, i, 'portfolio')}
       </div>"""
 
-    return f"""
+    return section_header + f"""
     <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
                 padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7d4e00">
       💡 <b>사용 방법:</b> 각 항목을 클릭하면 초안이 펼쳐집니다. <b>복사</b> 버튼으로 카카오톡·이메일에 붙여넣기 하세요.
@@ -3771,4 +3765,14 @@ def build_drafts_html(drafts_data: list[dict], generated_at: str) -> str:
 def save_drafts(drafts_data: list[dict],
                 path: str = "drafts.html") -> str:
     """커뮤니케이션 초안 인터랙티브 HTML 저장."""
-    generated_at = da
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    html = build_drafts_html(drafts_data, generated_at)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
+    logger.info(f"[Drafts] 커뮤니케이션 초안 페이지 저장 → {path}")
+    return path
+
+
+# =============================================================================
+# 단독 실행 (테스트용)
+# =========================================
