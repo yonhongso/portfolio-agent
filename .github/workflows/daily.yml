@@ -33,6 +33,8 @@ jobs:
           SMTP_HOST: smtp.gmail.com
           SMTP_USER: yonhongso@gmail.com
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
           mkdir -p data logs
           python -u run_agent.py
@@ -44,8 +46,4 @@ jobs:
         run: |
           git config user.name "Portfolio Agent Bot"
           git config user.email "action@github.com"
-          git add dashboard.html
-          git add -f data/signals_*.json 2>/dev/null || true
-          git add -f signals.db 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "dashboard: auto-update $(date +'%Y-%m-%d %H:%M KST')"
-          git push
+          git add dashboard
