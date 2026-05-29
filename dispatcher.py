@@ -3534,21 +3534,24 @@ def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at:
 
     cards_html = ""
     if red_co:
-        cards_html += _flag_banner("red", "🔴 즉시검토", "Immediate Review", len(reds))
+        _red_inner = _flag_banner("red", "🔴 즉시검토", "Immediate Review", len(reds))
         for co, sigs in _sort_co(red_co):
-            cards_html += _company_section_html(co, sorted(sigs, key=lambda x: 0 if x.action_flag == "red" else 1))
+            _red_inner += _company_section_html(co, sorted(sigs, key=lambda x: 0 if x.action_flag == "red" else 1))
+        cards_html += f'<div data-flag-group="red">{_red_inner}</div>'
     if yellow_co:
-        cards_html += _flag_banner("yellow", "🟡 동향주시", "Watch & Report", len(yellows))
+        _yellow_inner = _flag_banner("yellow", "🟡 동향주시", "Watch & Report", len(yellows))
         for co, sigs in _sort_co(yellow_co):
-            cards_html += _company_section_html(co, sigs)
+            _yellow_inner += _company_section_html(co, sigs)
+        cards_html += f'<div data-flag-group="yellow">{_yellow_inner}</div>'
     white_co: dict = _dd(list)
     for s in signals:
         if s.action_flag == "white":
             white_co[s.portfolio_name].append(s)
     if white_co:
-        cards_html += _flag_banner("white", "⚪ 정기모니터링", "Routine Track", len(whites))
+        _white_inner = _flag_banner("white", "⚪ 정기모니터링", "Routine Track", len(whites))
         for co, sigs in _sort_co(white_co):
-            cards_html += _company_section_html(co, sigs)
+            _white_inner += _company_section_html(co, sigs)
+        cards_html += f'<div data-flag-group="white">{_white_inner}</div>'
     if not cards_html:
         cards_html = '<div style="text-align:center;padding:24px;color:#adb5bd;font-size:13px">오늘 검토 항목 없음 · No items today</div>'
 
@@ -3557,21 +3560,21 @@ def _build_daily_overview_section(signals: list[ClassifiedSignal], generated_at:
     <table width="100%" cellspacing="0" cellpadding="0"
            style="margin:14px 0 10px;border-collapse:separate;border-spacing:8px 0">
       <tr>
-        <td style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+        <td onclick="filterFlag('red')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #e74c3c;
-            box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
           <div style="font-size:34px;font-weight:800;line-height:1;color:#c0392b">{len(reds)}</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">🔴 즉시검토<br><span style="font-size:9px;color:#e0aaaa">Immediate Review</span></div>
         </td>
-        <td style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+        <td onclick="filterFlag('yellow')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #f39c12;
-            box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
           <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">{len(yellows)}</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">🟡 동향주시<br><span style="font-size:9px;color:#d4b96a">Watch & Report</span></div>
         </td>
-        <td style="background:#fff;border-radius:10px;padding:16px 8px 14px;
+        <td onclick="filterFlag('white')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #adb5bd;
-            box-shadow:0 2px 8px rgba(0,0,0,.06)">
+            box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
           <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">{len(whites)}</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">⚪ 정기모니터링<br><span style="font-size:9px">Reference</span></div>
         </td>
@@ -3768,14 +3771,4 @@ def build_drafts_html(drafts_data: list[dict], generated_at: str) -> str:
 def save_drafts(drafts_data: list[dict],
                 path: str = "drafts.html") -> str:
     """커뮤니케이션 초안 인터랙티브 HTML 저장."""
-    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-    html = build_drafts_html(drafts_data, generated_at)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(html)
-    logger.info(f"[Drafts] 커뮤니케이션 초안 페이지 저장 → {path}")
-    return path
-
-
-# =============================================================================
-# 단독 실행 (테스트용)
-# =======================================================
+    generated_at = da
