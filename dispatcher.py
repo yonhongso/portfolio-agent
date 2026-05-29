@@ -1895,7 +1895,7 @@ class Dispatcher:
             f"{body}"
         )
         try:
-            self.telegram._send(msg)
+            self.telegram.send(msg)
             print(f"[Telegram] 일일 요약 발송 완료 ({len(by_co)}개사)", flush=True)
         except Exception as e:
             logger.warning(f"[Telegram] 일일 요약 발송 실패: {e}")
@@ -1911,7 +1911,7 @@ class Dispatcher:
             f"오늘 수집된 포트폴리오사 관련 기사가 없습니다."
         )
         try:
-            self.telegram._send(msg)
+            self.telegram.send(msg)
             logger.info("[Telegram] 기사 없음 알림 발송 완료")
         except Exception as e:
             logger.warning(f"[Telegram] 기사 없음 알림 실패: {e}")
@@ -3775,4 +3775,4 @@ def save_drafts(drafts_data: list[dict],
 
 # =============================================================================
 # 단독 실행 (테스트용)
-# =========================================
+# ===========================================
