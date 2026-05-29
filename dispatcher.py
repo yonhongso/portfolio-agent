@@ -1084,7 +1084,7 @@ def _call_claude(prompt: str,
 
 
 _WEEKLY_INSIGHT_PROMPT = """당신은 SK네트웍스 사업개발팀의 시니어 포트폴리오 담당자입니다.
-아래는 지난 1주일간 포트폴리오사에서 수집된 주요 시그널 목록입니다.
+아래는 이번 주 ({date_range}) 포트폴리오사에서 수집된 주요 시그널 목록입니다.
 
 {signals_json}
 
@@ -1107,7 +1107,7 @@ JSON 없이 위 포맷 그대로 출력하세요."""
 
 
 _MONTHLY_INSIGHT_PROMPT = """당신은 SK네트웍스 사업개발팀의 시니어 포트폴리오 담당자입니다.
-아래는 지난 1개월간 포트폴리오사에서 수집된 시그널 목록입니다.
+아래는 이번 달 ({date_range}) 포트폴리오사에서 수집된 시그널 목록입니다.
 
 {signals_json}
 
@@ -1135,12 +1135,16 @@ JSON 없이 위 포맷 그대로 출력하세요."""
 
 def _generate_weekly_insight(signals: list) -> str:
     """Claude Sonnet으로 주간 종합 인사이트 생성. 실패 시 기본 문구 반환."""
+    from signal_db import SignalDB
+    w_start, w_end = SignalDB.weekly_range()
+    date_range = f"{w_start.strftime('%Y.%m.%d')}~{w_end.strftime('%m.%d')}"
+
     reds    = [s for s in signals if s.action_flag == "red"]
     yellows = [s for s in signals if s.action_flag == "yellow"]
     key_signals = sorted(reds + yellows,
                          key=lambda x: x.source_tier)[:8]
     if not key_signals:
-        return "이번 주 주요 이슈 없음 — 정기 모니터링 유지."
+        return f"이번 주({date_range}) 주요 이슈 없음 — 정기 모니터링 유지."
 
     signals_json = json.dumps([{
         "company":     s.portfolio_name,
@@ -1151,7 +1155,7 @@ def _generate_weekly_insight(signals: list) -> str:
     } for s in key_signals], ensure_ascii=False, indent=2)
 
     result = _call_claude(
-        _WEEKLY_INSIGHT_PROMPT.format(signals_json=signals_json),
+        _WEEKLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range),
         model="claude-sonnet-4-6",
         max_tokens=600,
     )
@@ -1163,18 +1167,22 @@ def _generate_weekly_insight(signals: list) -> str:
     logger.info("[Claude→Groq] 주간 인사이트 폴백")
     try:
         from classifier_groq import _call
-        return _call(_WEEKLY_INSIGHT_PROMPT.format(signals_json=signals_json)) or                "주간 인사이트 생성 실패 — 수동 검토 필요."
+        return _call(_WEEKLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range)) or                "주간 인사이트 생성 실패 — 수동 검토 필요."
     except Exception:
         return "주간 인사이트 생성 실패 — 수동 검토 필요."
 
 
 def _generate_monthly_insight(signals: list, year: int, month: int) -> str:
     """Claude Sonnet으로 월간 심층 분석 생성. 실패 시 기본 문구 반환."""
+    from signal_db import SignalDB
+    m_start, m_end = SignalDB.monthly_range()
+    date_range = f"{m_start.strftime('%Y.%m.%d')}~{m_end.strftime('%m.%d')}"
+
     key_signals = sorted(signals,
         key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
                        x.source_tier))[:12]
     if not key_signals:
-        return f"{year}년 {month}월 주요 포트폴리오 이슈 없음."
+        return f"{year}년 {month}월({date_range}) 주요 포트폴리오 이슈 없음."
 
     signals_json = json.dumps([{
         "company":     s.portfolio_name,
@@ -1187,7 +1195,7 @@ def _generate_monthly_insight(signals: list, year: int, month: int) -> str:
     } for s in key_signals], ensure_ascii=False, indent=2)
 
     result = _call_claude(
-        _MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json),
+        _MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range),
         model="claude-sonnet-4-6",
         max_tokens=1200,
     )
@@ -1199,7 +1207,7 @@ def _generate_monthly_insight(signals: list, year: int, month: int) -> str:
     logger.info("[Claude→Groq] 월간 분석 폴백")
     try:
         from classifier_groq import _call
-        return _call(_MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json)) or                "월간 분석 생성 실패 — 수동 검토 필요."
+        return _call(_MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range)) or                "월간 분석 생성 실패 — 수동 검토 필요."
     except Exception:
         return "월간 분석 생성 실패 — 수동 검토 필요."
 
@@ -3770,18 +3778,4 @@ def save_drafts(drafts_data: list[dict],
 
 # =============================================================================
 # 단독 실행 (테스트용)
-# =============================================================================
-if __name__ == "__main__":
-    from collector import Collector
-    from classifier_groq import Classifier
-
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(message)s")
-
-    articles = Collector().run()
-    signals  = Classifier().run(articles)
-    disp     = Dispatcher()
-
-    disp.send_telegram_alerts(signals)
-    disp.send_daily_email(signals)
-    print("배포 완료")
+# =======================================================
