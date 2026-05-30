@@ -187,4 +187,110 @@ class SignalDB:
                     relevance      = r["relevance"] or "",
                     summary_ko     = r["summary_ko"] or "",
                     summary_en     = r["summary_en"] or "",
-                    
+                    classified_at  = r["classified_at"] or "",
+                    model_used     = r["model_used"] or "",
+                    content_hash   = r["content_hash"],
+                ))
+            except Exception as e:
+                logger.warning(f"[SignalDB] 행 복원 실패: {e}")
+        return result
+
+    @staticmethod
+    def weekly_range() -> Tuple[datetime, datetime]:
+        """이번 주 월요일 00:00 ~ 일요일 23:59 반환."""
+        today = datetime.now()
+        monday = (today - timedelta(days=today.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        sunday = (monday + timedelta(days=6)).replace(
+            hour=23, minute=59, second=59, microsecond=0)
+        return monday, sunday
+
+    @staticmethod
+    def monthly_range() -> Tuple[datetime, datetime]:
+        """이번 달 첫 번째 영업일 00:00 ~ 말일 23:59 반환."""
+        today = datetime.now()
+        year, month = today.year, today.month
+        last_day = calendar.monthrange(year, month)[1]
+        month_end = datetime(year, month, last_day, 23, 59, 59)
+        # 첫 번째 영업일 (토/일 건너뜀)
+        first = date(year, month, 1)
+        while first.weekday() >= 5:
+            first += timedelta(days=1)
+        month_start = datetime(year, month, first.day, 0, 0, 0)
+        return month_start, month_end
+
+    def get_weekly(self) -> list:
+        """Weekly 탭 — 이번 주 월~일 기준 published_at 필터."""
+        start, end = self.weekly_range()
+        return self._fetch_by_range(start, end)
+
+    def get_monthly(self) -> list:
+        """Monthly 탭 — 이번 달 첫 영업일~말일 기준 published_at 필터."""
+        start, end = self.monthly_range()
+        return self._fetch_by_range(start, end)
+
+    def _fetch_by_range(self, start: datetime, end: datetime) -> list:
+        """published_at 기준 범위 필터."""
+        from classifier_groq import ClassifiedSignal
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM signals
+                WHERE published_at >= ? AND published_at <= ?
+                ORDER BY published_at DESC
+            """, [start.isoformat(), end.isoformat()]).fetchall()
+        result = []
+        for r in rows:
+            try:
+                result.append(ClassifiedSignal(
+                    portfolio_id   = r["portfolio_id"],
+                    portfolio_name = r["portfolio_name"],
+                    url            = r["url"] or "",
+                    title          = r["title"] or "",
+                    summary        = r["summary_ko"] or "",
+                    source         = r["source"] or "",
+                    source_tier    = r["source_tier"] or 2,
+                    published_at   = r["published_at"] or "",
+                    sentiment      = r["sentiment"] or "",
+                    signal_type    = r["signal_type"] or "기타",
+                    action_flag    = r["action_flag"] or "white",
+                    relevance      = r["relevance"] or "",
+                    summary_ko     = r["summary_ko"] or "",
+                    summary_en     = r["summary_en"] or "",
+                    classified_at  = r["classified_at"] or "",
+                    model_used     = r["model_used"] or "",
+                    content_hash   = r["content_hash"],
+                ))
+            except Exception as e:
+                logger.warning(f"[SignalDB] 행 복원 실패: {e}")
+        return result
+
+    def summary_stats(self, days: int = 30) -> dict:
+        """기간별 통계 (대시보드 헤더용)."""
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        with self._conn() as conn:
+            row = conn.execute("""
+                SELECT
+                  COUNT(*)                                         AS total,
+                  SUM(action_flag='red')                          AS reds,
+                  SUM(action_flag='yellow')                       AS yellows,
+                  SUM(action_flag='white')                        AS whites,
+                  COUNT(DISTINCT portfolio_id)                    AS companies
+                FROM signals WHERE saved_at >= ?
+            """, [since]).fetchone()
+        return dict(row) if row else {}
+
+    def top_companies(self, days: int = 7, limit: int = 5) -> list[dict]:
+        """이슈 많은 상위 회사 (주간 대시보드용)."""
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT portfolio_name,
+                       COUNT(*) as total,
+                       SUM(action_flag='red') as reds,
+                       SUM(action_flag='yellow') as yellows
+                FROM signals WHERE saved_at >= ?
+                GROUP BY portfolio_name
+                ORDER BY reds DESC, yellows DESC, total DESC
+                LIMIT ?
+            """, [since, limit]).fetchall()
+        return [dict(r) for r in rows]
