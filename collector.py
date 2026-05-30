@@ -10,6 +10,7 @@ collector.py — 데이터 수집 에이전트
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import sqlite3
 import time
@@ -617,4 +618,4 @@ class Collector:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s [%(levelname)s] %(message)s")
-    collector = Collector()
+    collector = Co
