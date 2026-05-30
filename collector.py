@@ -606,4 +606,15 @@ class Collector:
             f"[수집 완료] 전체 {total}건 수집 → "
             f"{len(all_passed)}건 LLM 분류 대상 "
             f"({len(all_passed)/total*100:.0f}% 통과)"
-            if total else "[수집 완료] 수집�
+            if total else "[수집 완료] 수집된 기사 없음"
+        )
+        return all_passed
+
+
+# =============================================================================
+# 실행 진입점 (단독 테스트용)
+# =============================================================================
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s [%(levelname)s] %(message)s")
+    collector = Collector()
