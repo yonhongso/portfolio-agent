@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, timezone
 from dataclasses import asdict
 
 
+KST = timezone(timedelta(hours=9))
+
 def filter_by_published(signals, days: int) -> list:
     """published_at 기준 days일 이내 시그널만 반환."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
@@ -12,14 +14,32 @@ def filter_by_published(signals, days: int) -> list:
             pub = s.published_at
             if not pub:
                 continue
-            # 타임존 정보 없는 경우 UTC로 간주
             pub_dt = datetime.fromisoformat(pub.replace("Z", "+00:00"))
             if pub_dt.tzinfo is None:
                 pub_dt = pub_dt.replace(tzinfo=timezone.utc)
             if pub_dt >= cutoff:
                 result.append(s)
         except Exception:
-            pass  # 날짜 파싱 실패 시 제외
+            pass
+    return result
+
+def filter_by_today_kst(signals) -> list:
+    """KST 당일 0시 이후 published_at 기사만 반환."""
+    now_kst = datetime.now(KST)
+    today_midnight_kst = now_kst.replace(hour=0, minute=0, second=0, microsecond=0)
+    result = []
+    for s in signals:
+        try:
+            pub = s.published_at
+            if not pub:
+                continue
+            pub_dt = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+            if pub_dt.tzinfo is None:
+                pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+            if pub_dt >= today_midnight_kst:
+                result.append(s)
+        except Exception:
+            pass
     return result
 
 print("=== Portfolio Agent 시작 ===", flush=True)
@@ -136,17 +156,17 @@ if not monthly_signals:
         monthly_signals = signals
 
 # ── published_at 기준 날짜 필터 적용
-# Daily  : 평일 24시간 / 월요일은 72시간(토·일 포함)
+# Daily  : KST 당일 0시 이후 기사 / 월요일은 금요일 0시 이후(주말 포함)
 # Weekly : 7일 이내 기사만
 # Monthly: 30일 이내 기사만
-_is_monday = datetime.now(timezone.utc).weekday() == 0  # 0 = 월요일
-_daily_days = 3 if _is_monday else 1
-signals         = filter_by_published(signals, days=_daily_days)
+_is_monday = datetime.now(KST).weekday() == 0
+if _is_monday:
+    signals = filter_by_published(signals, days=3)   # 월요일: 금~일 포함
+    print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
+else:
+    signals = filter_by_today_kst(signals)            # 평일: KST 당일 0시 기준
 weekly_signals  = filter_by_published(weekly_signals,  days=7)
 monthly_signals = filter_by_published(monthly_signals, days=30)
-
-if _is_monday:
-    print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
 
 print("filtered → daily: {} / weekly: {} / monthly: {}".format(
     len(signals), len(weekly_signals), len(monthly_signals)), flush=True)
@@ -167,24 +187,4 @@ except Exception as e:
         print("dashboard OK (AI 없이)", flush=True)
     except Exception as e2:
         print("dashboard FAIL: {}".format(e2), flush=True)
-        traceback.print_exc()
-
-print("[3/3] telegram alerts...", flush=True)
-try:
-    if signals:
-        dispatcher.send_telegram_alerts(signals)
-    else:
-        # 수집된 기사 없을 때도 텔레그램 알림 발송
-        dispatcher.send_telegram_no_news()
-    print("telegram OK", flush=True)
-except Exception as e:
-    print("telegram FAIL (계속 진행): {}".format(e), flush=True)
-
-print("[3/3] email...", flush=True)
-try:
-    dispatcher.send_daily_email(signals, weekly_signals=weekly_signals, monthly_signals=monthly_signals)
-    print("email OK", flush=True)
-except Exception as e:
-    print("email FAIL (계속 진행): {}".format(e), flush=True)
-
-print("=== DONE ===", flush=True)
+        traceback.print_e
