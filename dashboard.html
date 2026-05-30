@@ -325,6 +325,9 @@
     <button class="tab-btn active" onclick="showTab('overview',this)">
       📅 Daily
     </button>
+    <button class="tab-btn" onclick="showTab('drafts',this)">
+      📱 커뮤니케이션 초안
+    </button>
     <button class="tab-btn" onclick="showTab('weekly',this)">
       📈 Weekly
     </button>
@@ -392,11 +395,14 @@
 
   <!-- DAILY-AUTO-END -->
 
-<!-- DRAFTS-AUTO-START -->
-<div class="section-header" style="margin-top:20px"><span>📱 커뮤니케이션 초안 &nbsp;|&nbsp; Communication Draft</span></div><div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br><span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>
-  <!-- DRAFTS-AUTO-END -->
-
   </div><!-- /tab-overview -->
+
+  <!-- ── 탭2: 커뮤니케이션 초안 -->
+  <div id="tab-drafts" class="tab-content">
+<!-- DRAFTS-AUTO-START -->
+<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br><span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>
+  <!-- DRAFTS-AUTO-END -->
+  </div><!-- /tab-drafts -->
 
   <!-- ── 탭3: Weekly -->
   <div id="tab-weekly" class="tab-content">
@@ -526,10 +532,4 @@
       document.execCommand('copy');
       sel.removeAllRanges();
       const orig = btn.textContent;
-      btn.textContent = '✓ 복사됨';
-      setTimeout(() => { btn.textContent = orig; }, 2000);
-    });
-  }
-</script>
-</body>
-</html>
+      btn.textContent = '✓ 복사�

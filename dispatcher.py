@@ -3397,15 +3397,8 @@ def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
     target_signals = reds if reds else yellows
     flag_label = "🔴 즉시검토" if reds else "🟡 동향주시"
 
-    section_header = (
-        '<div class="section-header" style="margin-top:20px">'
-        '<span>📱 커뮤니케이션 초안 &nbsp;|&nbsp; Communication Draft</span>'
-        '</div>'
-    )
-
     if not target_signals:
         return (
-            section_header +
             '<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">'
             '오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br>'
             '<span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>'
@@ -3446,7 +3439,7 @@ def _build_drafts_section(signals: list[ClassifiedSignal]) -> str:
         {_card('📧 포트폴리오사 대표 연락용', msg_portfolio, i, 'portfolio')}
       </div>"""
 
-    return section_header + f"""
+    return f"""
     <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
                 padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7d4e00">
       💡 <b>사용 방법:</b> 각 항목을 클릭하면 초안이 펼쳐집니다. <b>복사</b> 버튼으로 카카오톡·이메일에 붙여넣기 하세요.
@@ -3775,4 +3768,19 @@ def save_drafts(drafts_data: list[dict],
 
 # =============================================================================
 # 단독 실행 (테스트용)
-# ===========================================
+# =============================================================================
+if __name__ == "__main__":
+    from collector import Collector
+    from classifier_groq import Classifier
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s [%(levelname)s] %(message)s")
+
+    articles = Collector().run()
+    signals  = Classifier().run(articles)
+    disp     = Dispatcher()
+
+    disp.send_telegram_alerts(signals)
+    disp.send_daily_email(signals)
+    print("배포 완료")
+                                                                                                                                                                                                                                                    
