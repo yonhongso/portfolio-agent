@@ -156,15 +156,12 @@ if not monthly_signals:
         monthly_signals = signals
 
 # ── published_at 기준 날짜 필터 적용
-# Daily  : KST 당일 0시 이후 기사 / 월요일은 금요일 0시 이후(주말 포함)
-# Weekly : 7일 이내 기사만
-# Monthly: 30일 이내 기사만
 _is_monday = datetime.now(KST).weekday() == 0
 if _is_monday:
-    signals = filter_by_published(signals, days=3)   # 월요일: 금~일 포함
+    signals = filter_by_published(signals, days=3)
     print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
 else:
-    signals = filter_by_today_kst(signals)            # 평일: KST 당일 0시 기준
+    signals = filter_by_today_kst(signals)
 weekly_signals  = filter_by_published(weekly_signals,  days=7)
 monthly_signals = filter_by_published(monthly_signals, days=30)
 
@@ -180,11 +177,26 @@ try:
     )
     print("dashboard OK", flush=True)
 except Exception as e:
-    # AI 인사이트 실패해도 dashboard는 기본값으로 저장
     print("dashboard WARN (AI 인사이트 실패, 기본값 사용): {}".format(e), flush=True)
     try:
-        save_dashboard(signals)   # AI 없이 재시도
+        save_dashboard(signals)
         print("dashboard OK (AI 없이)", flush=True)
     except Exception as e2:
         print("dashboard FAIL: {}".format(e2), flush=True)
-        traceback.print_e
+        traceback.print_exc()
+
+print("[3/3] telegram alerts... (telegram_realtime.yml 워크플로우가 담당)", flush=True)
+print("telegram OK", flush=True)
+
+print("[3/3] email...", flush=True)
+try:
+    dispatcher.send_daily_email(
+        signals,
+        weekly_signals=weekly_signals,
+        monthly_signals=monthly_signals,
+    )
+    print("email OK", flush=True)
+except Exception as e:
+    print("email FAIL (계속 진행): {}".format(e), flush=True)
+
+print("=== DONE ===", flush=True)
