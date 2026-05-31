@@ -46,4 +46,8 @@ jobs:
         run: |
           git config user.name "Portfolio Agent Bot"
           git config user.email "action@github.com"
-          git add dashboard
+          git add dashboard.html
+          git add -f data/signals_*.json 2>/dev/null || true
+          git add -f signals.db 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "dashboard: auto-update $(date +'%Y-%m-%d %H:%M KST')"
+          git push
