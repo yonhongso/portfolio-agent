@@ -300,9 +300,12 @@ class NaverNewsCollector:
         client_id     = os.environ.get("NAVER_CLIENT_ID", "")
         client_secret = os.environ.get("NAVER_CLIENT_SECRET", "")
         if not client_id or not client_secret:
-            logger.warning("[NaverNews] NAVER_CLIENT_ID/SECRET 환경변수 없음 — 스킵")
+            msg = "[NaverNews] NAVER_CLIENT_ID/SECRET 환경변수 없음 — 스킵"
+            logger.warning(msg)
+            print(msg, flush=True)
             return []
 
+        print(f"[NaverNews] API 호출 시작 (client_id={client_id[:4]}****)", flush=True)
         headers = {
             "X-Naver-Client-Id":     client_id,
             "X-Naver-Client-Secret": client_secret,
@@ -316,8 +319,14 @@ class NaverNewsCollector:
             params = {"query": query, "display": 10, "sort": "date"}
             try:
                 resp = requests.get(self.API_URL, headers=headers, params=params, timeout=10)
+                if resp.status_code != 200:
+                    err_msg = f"[NaverNews] HTTP {resp.status_code} ({query}): {resp.text[:200]}"
+                    logger.warning(err_msg)
+                    print(err_msg, flush=True)
+                    continue
                 resp.raise_for_status()
                 items = resp.json().get("items", [])
+                print(f"[NaverNews] {query}: {len(items)}건 수집", flush=True)
                 for item in items:
                     title   = re.sub(r"<[^>]+>", "", item.get("title", "")).strip()
                     summary = re.sub(r"<[^>]+>", "", item.get("description", "")).strip()
@@ -333,7 +342,9 @@ class NaverNewsCollector:
                         lang="ko",
                     ))
             except Exception as e:
-                logger.warning(f"[NaverNews] {query}: {e}")
+                err_msg = f"[NaverNews] {query} 예외: {type(e).__name__}: {e}"
+                logger.warning(err_msg)
+                print(err_msg, flush=True)
         return articles
 
     @staticmethod
@@ -618,4 +629,4 @@ class Collector:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s [%(levelname)s] %(message)s")
-    collector = Co
+    collector = Collector()
