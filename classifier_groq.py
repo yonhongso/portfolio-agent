@@ -108,14 +108,22 @@ def _call(prompt: str, retries: int = 3) -> Optional[str]:
             return r.json()["content"][0]["text"]
         except requests.exceptions.HTTPError as e:
             wait = 3 * (attempt + 1)   # 5→3초로 단축
-            logger.warning(f"[Claude] HTTP 오류: {e} → {wait}초 대기 (시도 {attempt+1}/{retries})")
+            try:
+                err_body = r.json()
+            except Exception:
+                err_body = r.text[:300]
+            msg = f"[Claude] HTTP 오류: {e} | 응답: {err_body} → {wait}초 대기 (시도 {attempt+1}/{retries})"
+            logger.warning(msg)
+            print(msg, flush=True)
             time.sleep(wait)
         except Exception as e:
             wait = 3 * (attempt + 1)
             logger.warning(f"[Claude] 오류: {e} → {wait}초 대기 (시도 {attempt+1}/{retries})")
             time.sleep(wait)
 
-    logger.warning(f"[Claude] {retries}회 재시도 모두 실패 — None 반환")
+    msg = f"[Claude] {retries}회 재시도 모두 실패 — None 반환"
+    logger.warning(msg)
+    print(msg, flush=True)
     return None
 
 
