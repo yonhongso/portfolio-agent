@@ -500,9 +500,13 @@ def _signal_card_html(s: ClassifiedSignal) -> str:
     tc, bg = _SIGNAL_TYPE_COLORS.get(s.signal_type, ("#455a64", "#f5f5f5"))
 
     # 언어 선택: KR(국내) → summary_ko, 해외 → summary_en
-    summary_ko = (s.summary_ko or "").strip()
-    summary_en = (s.summary_en or "").strip()
-    headline = summary_ko or summary_en or s.title[:60]
+    summary_ko = (s.summary_ko or "").strip().rstrip(".…").strip()
+    summary_en = (s.summary_en or "").strip().rstrip(".…").strip() if not (s.summary_ko or "").strip() else (s.summary_en or "").strip()
+    # 요약이 없으면 제목 fallback — 출처가 잘라놓은 말줄임(...) 제거 후 완결 절단
+    _title = (s.title or "").strip()
+    while _title and _title[-1] in ".… ":
+        _title = _title[:-1]
+    headline = summary_ko or summary_en or _finish_summary(_title, 60)
 
     # 출처 단축
     src_raw = s.source or ""
@@ -1122,31 +1126,23 @@ JSON 없이 위 포맷 그대로 출력하세요."""
 _MONTHLY_INSIGHT_PROMPT = """당신은 SK네트웍스 사업개발팀의 시니어 포트폴리오 담당자입니다.
 아래는 이번 달 ({date_range}) 포트폴리오사에서 수집된 시그널 목록입니다.
 
+이달 수집 통계: {stats}
+
 {signals_json}
 
-아래 형식을 반드시 지켜 한국어로 작성하세요. 줄글 금지, 보고서 항목 형식으로 작성.
+아래 JSON 스키마로만 출력하세요. 코드블록·설명 없이 JSON만.
+{{
+  "diagnosis": "이달의 진단 1문장 (60자 이내) — 위 수집 통계의 정량 수치(즉시검토 건수 등)와 정성 판단을 함께 담을 것",
+  "top3": [
+    {{"company": "회사명", "status": "핵심 현황, 15~20자 명사형", "impact": "당사 지분가치·Exit·평판 관점 영향, 15~20자", "action": "권고 대응, 15~20자"}}
+  ],
+  "exec_decision": "경영층 판단 필요 사안 — 'N건 — 회사명, 내용' 형식 1문장. 없으면 '없음 — 정기 모니터링 유지'"
+}}
 
-[이달의 포트폴리오 총평]
-▪ {{포트폴리오 전반 건전성 평가, 15자 내외 명사형}}
-▪ {{이달 주요 리스크 또는 기회 요인, 15자 내외}}
-▪ {{시장 맥락 또는 투자 관점 시사점, 15자 내외}}
-
-[Top 3 핵심 이슈 및 투자 시사점]
-▪ {{회사명}}: {{이슈 핵심 + 투자 관점, 20자 내외 명사형}}
-▪ {{회사명}}: {{이슈 핵심 + 투자 관점, 20자 내외 명사형}}
-▪ {{회사명}}: {{이슈 핵심 + 투자 관점, 20자 내외 명사형}}
-
-[다음 달 중점 모니터링 과제]
-▸ {{모니터링 과제 1, 간결하게}}
-▸ {{모니터링 과제 2, 간결하게}}
-
-[경영층 보고 핵심 메시지]
-→ {{1문장 핵심 메시지}}
-
-공통 규칙: 모든 항목은 반드시 주어(회사명, 또는 '포트폴리오 전반' 같은 명시적 주체)로 시작할 것. 주어 없는 문구 금지.
-(좋은 예: "업스테이지, 규제 리스크 증가" / 나쁜 예: "규제 리스크 증가")
-
-JSON 없이 위 포맷 그대로 출력하세요."""
+규칙:
+- top3는 정확히 3개, 중요도 순, 같은 회사 중복 금지
+- 모든 문구는 주체가 명확해야 하며 말줄임(...) 금지, 완결된 명사형 어구로 작성
+- status/impact/action은 각각 20자를 넘기지 말 것"""
 
 
 def _generate_weekly_insight(signals: list) -> str:
@@ -1210,8 +1206,14 @@ def _generate_monthly_insight(signals: list, year: int, month: int) -> str:
         "source":      s.source,
     } for s in key_signals], ensure_ascii=False, indent=2)
 
+    _n_red    = sum(1 for s in signals if s.action_flag == "red")
+    _n_yellow = sum(1 for s in signals if s.action_flag == "yellow")
+    _n_co     = len({s.portfolio_name for s in signals})
+    stats = (f"총 {len(signals)}건 / 즉시검토 {_n_red}건 / "
+             f"동향주시 {_n_yellow}건 / {_n_co}개사")
+
     result = _call_claude(
-        _MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range),
+        _MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range, stats=stats),
         model="gpt-4o",
         max_tokens=1200,
     )
@@ -1223,9 +1225,26 @@ def _generate_monthly_insight(signals: list, year: int, month: int) -> str:
     logger.info("[Claude→Groq] 월간 분석 폴백")
     try:
         from classifier_groq import _call
-        return _call(_MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range)) or                "월간 분석 생성 실패 — 수동 검토 필요."
+        return _call(_MONTHLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range, stats=stats)) or                "월간 분석 생성 실패 — 수동 검토 필요."
     except Exception:
         return "월간 분석 생성 실패 — 수동 검토 필요."
+
+
+def _monthly_insight_as_text(raw: str) -> str:
+    """월간 인사이트 JSON 응답을 이메일용 텍스트 포맷으로 변환. JSON 아니면 그대로 반환."""
+    try:
+        i, j = raw.find("{"), raw.rfind("}")
+        data = json.loads(raw[i:j + 1]) if i != -1 and j > i else None
+        if not data:
+            return raw
+        lines = ["[이달의 진단]", data.get("diagnosis", ""), "", "[Top 3 핵심 이슈]"]
+        for it in (data.get("top3") or [])[:3]:
+            lines.append(f"▪ {it.get('company','')}: {it.get('status','')}"
+                         f" → 영향: {it.get('impact','')} → 대응: {it.get('action','')}")
+        lines += ["", "[경영층 판단 필요]", data.get("exec_decision", "")]
+        return "\n".join(lines)
+    except Exception:
+        return raw
 
 
 # =============================================================================
@@ -2230,7 +2249,8 @@ class Dispatcher:
         now  = datetime.now()
         # ── Claude Sonnet으로 월간 심층 분석 생성
         logger.info("[Monthly] Claude Sonnet 월간 심층 분석 생성 중...")
-        ai_insight = _generate_monthly_insight(signals, now.year, now.month)
+        ai_insight = _monthly_insight_as_text(
+            _generate_monthly_insight(signals, now.year, now.month))
         html = build_monthly_html(signals, now.year, now.month,
                                   ai_insight=ai_insight)
         subject = mcfg["subject_template"].format(
@@ -3273,6 +3293,58 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
         for line in insight_lines
         if line
     ) or "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 달 분석 없음</div>"
+
+    # ── M1 신규 디자인: JSON 응답이면 진단 박스 + Top3 카드(현황/영향/대응) + 경영층 콜아웃
+    def _m1_tag(t, c):
+        return (f"<span style='background:{c};color:#0f172a;border-radius:3px;"
+                f"padding:1px 7px;font-size:9.5px;font-weight:900;margin-right:7px'>{t}</span>")
+
+    def _m1_label(emoji, t, color="#6ee7b7"):
+        return (f"<div style='font-size:11px;font-weight:900;letter-spacing:1.2px;"
+                f"color:{color};margin-bottom:7px'>{emoji} {t}</div>")
+
+    try:
+        _js_s = ai_insight.find("{"); _js_e = ai_insight.rfind("}")
+        _m1 = json.loads(ai_insight[_js_s:_js_e + 1]) if _js_s != -1 and _js_e > _js_s else {}
+        _diag = (_m1.get("diagnosis") or "").strip()
+        _top3 = _m1.get("top3") or []
+        _exec = (_m1.get("exec_decision") or "").strip()
+        _co_rank = {}
+        for s in signals:
+            r = FLAG_RANK.get(s.action_flag, 2)
+            if r < _co_rank.get(s.portfolio_name, 2):
+                _co_rank[s.portfolio_name] = r
+        _cards = ""
+        for it in _top3[:3]:
+            _co = (it.get("company") or "").strip()
+            _fl = {0: "🔴", 1: "🟡", 2: "⚪"}.get(_co_rank.get(_co, 2))
+            _cards += (
+                "<div style='background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);"
+                "border-radius:10px;padding:11px 14px;margin-bottom:8px'>"
+                f"<div style='font-size:13px;font-weight:900;margin-bottom:6px'>{_fl} {_esc(_co)}</div>"
+                f"<div style='font-size:12px;line-height:1.8;color:rgba(255,255,255,.9)'>{_m1_tag('현황', '#94a3b8')}{_esc((it.get('status') or '').strip())}</div>"
+                f"<div style='font-size:12px;line-height:1.8;color:rgba(255,255,255,.9)'>{_m1_tag('영향', '#fbbf24')}{_esc((it.get('impact') or '').strip())}</div>"
+                f"<div style='font-size:12px;line-height:1.8;color:rgba(255,255,255,.9)'>{_m1_tag('대응', '#6ee7b7')}{_esc((it.get('action') or '').strip())}</div></div>"
+            )
+        if _diag and _cards:
+            _struct = (
+                _m1_label("🩺", "이달의 진단")
+                + "<div style='display:flex;gap:10px;align-items:flex-start;background:rgba(110,231,183,.08);"
+                  "border:1px solid rgba(110,231,183,.25);border-radius:10px;padding:11px 14px;margin-bottom:16px'>"
+                  "<span style='font-size:17px;line-height:1.4'>📌</span>"
+                  f"<div style='font-size:13.5px;line-height:1.7;font-weight:600'>{_esc(_diag)}</div></div>"
+                + _m1_label("🎯", "TOP 3 핵심 이슈") + _cards
+            )
+            if _exec:
+                _struct += (
+                    "<div style='margin-top:13px;background:rgba(251,191,36,.1);border-left:3px solid #fbbf24;"
+                    "border-radius:0 8px 8px 0;padding:10px 14px'>"
+                    "<span style='font-size:11px;font-weight:900;letter-spacing:1px;color:#fbbf24'>⚖️ 경영층 판단 필요</span>"
+                    f"<div style='font-size:12.5px;font-weight:600;line-height:1.7;margin-top:3px'>{_esc(_exec)}</div></div>"
+                )
+            insight_html = _struct
+    except Exception:
+        pass  # JSON 아니면 기존 라인 렌더링 유지
 
     # ── M2: 리스크 등급 변화 테이블
     by_co: dict = _dd(list)
