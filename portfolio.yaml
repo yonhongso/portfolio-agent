@@ -507,7 +507,7 @@ portfolios:
     active: true
 
   - id: lvis
-    name: "엘비스"
+    name: "Lvis"
     name_en: "LVIS"
     sector: "디지털 헬스 / 뇌신경 분석 AI"
     stage: "Series B"
@@ -530,6 +530,9 @@ portfolios:
         - "LVIS funding"
       exclude:
         - "LVIS catheter"
+        - "East Hampton"
+        - "LVIS Fair"
+        - "Elvis"
         - "LVIS stent"
 
     sources:

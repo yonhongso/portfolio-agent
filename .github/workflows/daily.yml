@@ -3,6 +3,8 @@ name: Portfolio Agent Daily Run
 on:
   schedule:
     - cron: '0 23 * * 0-4'  # 평일 매일 오전 8시 KST (UTC 23:00 전날)
+    - cron: '0 8 * * *'      # 매일 17:00 KST (토·일 포함) — Daily 갱신, 일요일엔 Weekly 탭 생성
+    - cron: '0 0 1 * *'      # 매월 1일 09:00 KST — Monthly 탭 생성 (전월 반영)
   workflow_dispatch:          # 수동 실행 버튼 (테스트용)
 
 jobs:

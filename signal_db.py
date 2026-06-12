@@ -197,35 +197,37 @@ class SignalDB:
 
     @staticmethod
     def weekly_range() -> Tuple[datetime, datetime]:
-        """이번 주 월요일 00:00 ~ 일요일 23:59 반환."""
-        today = datetime.now()
-        monday = (today - timedelta(days=today.weekday())).replace(
-            hour=0, minute=0, second=0, microsecond=0)
-        sunday = (monday + timedelta(days=6)).replace(
+        """가장 최근 완결된 주: 월요일 00:00 ~ 일요일 23:59 (KST 기준).
+        일요일에 실행되면 그날로 끝나는 주(월~오늘), 평일이면 지난주를 반환."""
+        kst = timezone(timedelta(hours=9))
+        today = datetime.now(kst).replace(tzinfo=None)
+        days_since_sunday = (today.weekday() + 1) % 7  # 일=0, 월=1 … 토=6
+        sunday = (today - timedelta(days=days_since_sunday)).replace(
             hour=23, minute=59, second=59, microsecond=0)
+        monday = (sunday - timedelta(days=6)).replace(
+            hour=0, minute=0, second=0, microsecond=0)
         return monday, sunday
 
     @staticmethod
     def monthly_range() -> Tuple[datetime, datetime]:
-        """이번 달 첫 번째 영업일 00:00 ~ 말일 23:59 반환."""
-        today = datetime.now()
-        year, month = today.year, today.month
+        """전월 1일 00:00 ~ 전월 말일 23:59 반환 (KST 기준, 완결된 달)."""
+        kst = timezone(timedelta(hours=9))
+        today = datetime.now(kst).replace(tzinfo=None)
+        if today.month == 1:
+            year, month = today.year - 1, 12
+        else:
+            year, month = today.year, today.month - 1
         last_day = calendar.monthrange(year, month)[1]
-        month_end = datetime(year, month, last_day, 23, 59, 59)
-        # 첫 번째 영업일 (토/일 건너뜀)
-        first = date(year, month, 1)
-        while first.weekday() >= 5:
-            first += timedelta(days=1)
-        month_start = datetime(year, month, first.day, 0, 0, 0)
-        return month_start, month_end
+        return (datetime(year, month, 1, 0, 0, 0),
+                datetime(year, month, last_day, 23, 59, 59))
 
     def get_weekly(self) -> list:
-        """Weekly 탭 — 이번 주 월~일 기준 published_at 필터."""
+        """Weekly 탭 — 최근 완결 주(월~일) published_at 필터."""
         start, end = self.weekly_range()
         return self._fetch_by_range(start, end)
 
     def get_monthly(self) -> list:
-        """Monthly 탭 — 이번 달 첫 영업일~말일 기준 published_at 필터."""
+        """Monthly 탭 — 전월(1일~말일) published_at 필터."""
         start, end = self.monthly_range()
         return self._fetch_by_range(start, end)
 

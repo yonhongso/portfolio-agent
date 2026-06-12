@@ -146,7 +146,7 @@ JSON만 출력: [{{"idx":0,"relevant":true}}]"""
 
 CLASSIFY = """투자심사역 지원 에이전트. 아래 기사를 분류하고 요약 작성.
 회사: {company}({stage},{sector}) 지분:{stake}% 이사회:{board_seat} 국가:{country}
-Sentiment: Positive|Neutral|Negative|Mixed
+Sentiment: Positive|Neutral|Negative (긍·부정 혼재 또는 애매하면 Neutral)
 Signal Type: 펀딩·밸류에이션|경영진 변동|파트너십·협업|제품·기술 출시|규제·법률 리스크|재무·실적|M&A·Exit|평판·ESG|기타
 Action Flag: red=IPO/M&A/C레벨사임/소송/파산, yellow=펀딩협상/임원이동/신제품, white=일반동향/PR
 Relevance: High|Medium|Low

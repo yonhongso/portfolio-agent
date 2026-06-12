@@ -346,7 +346,7 @@
       <button id="subtab-btn-drafts" onclick="showSubTab('drafts')"
         style="padding:7px 18px;font-size:12px;font-weight:700;border:none;border-bottom:2px solid transparent;
                margin-bottom:-2px;background:transparent;color:#868e96;cursor:pointer;border-radius:4px 4px 0 0">
-        📱 커뮤니케이션 초안
+        📱 Comm. Draft
       </button>
     </div>
 
@@ -745,9 +745,18 @@ Tickets available for Stage 212’s ‘Sunday with E…' style='text-align:cente
   function filterFlag(flag) {
     const groups = document.querySelectorAll('[data-flag-group]');
     const current = document.getElementById('tab-overview').getAttribute('data-filter');
+    const cards = document.querySelectorAll("[onclick^='filterFlag']");
+    const ringColor = { red: '#e74c3c', yellow: '#f39c12', white: '#adb5bd' };
+    function resetCards() {
+      cards.forEach(c => {
+        c.style.opacity = '1';
+        c.style.boxShadow = '0 2px 8px rgba(0,0,0,.06)';
+      });
+    }
     if (current === flag) {
       document.getElementById('tab-overview').removeAttribute('data-filter');
       groups.forEach(g => { g.style.display = ''; g.style.opacity = '1'; });
+      resetCards();
     } else {
       document.getElementById('tab-overview').setAttribute('data-filter', flag);
       groups.forEach(g => {
@@ -755,6 +764,17 @@ Tickets available for Stage 212’s ‘Sunday with E…' style='text-align:cente
           g.style.display = ''; g.style.opacity = '1';
         } else {
           g.style.display = 'none';
+        }
+      });
+      cards.forEach(c => {
+        const m = (c.getAttribute('onclick') || '').match(/'(\w+)'/);
+        const f = m ? m[1] : '';
+        if (f === flag) {
+          c.style.opacity = '1';
+          c.style.boxShadow = '0 0 0 2.5px ' + (ringColor[flag] || '#334155') + ', 0 4px 14px rgba(0,0,0,.14)';
+        } else {
+          c.style.opacity = '.4';
+          c.style.boxShadow = '0 2px 8px rgba(0,0,0,.06)';
         }
       });
     }
@@ -804,18 +824,4 @@ Tickets available for Stage 212’s ‘Sunday with E…' style='text-align:cente
   }
 </script>
 </body>
-</html>ontent').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + id).classList.add('active');
-    btn.classList.add('active');
-    const rb = document.getElementById('refresh-btn');
-    const rm = document.getElementById('refresh-msg');
-    if (id === 'weekly' || id === 'monthly') {
-      if (rb) rb.style.display = 'none';
-      if (rm) rm.style.display = 'none';
-    } else {
-      if (rb) rb.style.display = '';
-    }
-  }
-
-  function showSubTab(id)
+</html>

@@ -106,6 +106,25 @@ def load_historical_signals(days):
     return result
 
 
+def filter_by_range(signals, start, end) -> list:
+    """published_at이 [start, end] (KST naive) 범위에 드는 기사만 반환."""
+    result = []
+    for s in signals:
+        try:
+            pub = s.published_at
+            if not pub:
+                continue
+            pub_dt = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+            if pub_dt.tzinfo is None:
+                pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+            pub_kst = pub_dt.astimezone(KST).replace(tzinfo=None)
+            if start <= pub_kst <= end:
+                result.append(s)
+        except Exception:
+            pass
+    return result
+
+
 print("[1/3] collecting articles...", flush=True)
 try:
     articles = collector.run()
@@ -162,8 +181,10 @@ if _is_monday:
     print("월요일 모드: 토·일 포함 72시간 기사 수집", flush=True)
 else:
     signals = filter_by_today_kst(signals)
-weekly_signals  = filter_by_published(weekly_signals,  days=7)
-monthly_signals = filter_by_published(monthly_signals, days=30)
+_w_start, _w_end = SignalDB.weekly_range()
+_m_start, _m_end = SignalDB.monthly_range()
+weekly_signals  = filter_by_range(weekly_signals,  _w_start, _w_end)
+monthly_signals = filter_by_range(monthly_signals, _m_start, _m_end)
 
 print("filtered → daily: {} / weekly: {} / monthly: {}".format(
     len(signals), len(weekly_signals), len(monthly_signals)), flush=True)

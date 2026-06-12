@@ -33,8 +33,11 @@ def main():
         print("분류된 시그널 없음 → 종료")
         return
 
-    # 최근 2시간 이내 발행된 기사만 (수시 알림 중복 방지)
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=2)
+    # 최근 2시간 이내 발행 기사만 (수시 알림 중복 방지)
+    # 단, 하루 첫 회차(KST 09시 이전)는 밤사이 기사까지 12시간 커버
+    kst_now = datetime.now(timezone(timedelta(hours=9)))
+    window_h = 12 if kst_now.hour < 9 else 2
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=window_h)
     fresh = []
     for s in signals:
         try:
@@ -50,7 +53,7 @@ def main():
             pass
 
     if not fresh:
-        print(f"최근 2시간 내 신규 기사 없음 ({len(signals)}건 수집됨) → 종료")
+        print(f"최근 {window_h}시간 내 신규 기사 없음 ({len(signals)}건 수집됨) → 종료")
         return
 
     print(f"전체 시그널 {len(fresh)}건 텔레그램 발송")
