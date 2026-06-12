@@ -139,8 +139,15 @@ def _parse(raw: Optional[str]) -> Optional[list]:
 
 # ── 프롬프트 ─────────────────────────────────────────────────────────────────
 
-TRIAGE = """아래 기사가 {company} 투자 모니터링에 관련 있는지 판단하라.
-relevant: 회사 사업/재무/인사/규제/경쟁 동향. irrelevant: 무관.
+TRIAGE = """아래 기사가 {company} 투자 모니터링에 관련 있는지 판단하라. 엄격히 적용할 것.
+relevant 조건 (하나 이상 충족):
+- {company}가 기사의 주체 또는 핵심 당사자
+- 기사 이벤트가 {company}의 사업·재무·지분가치에 미치는 영향을 구체적으로 다룸 (규제·시장 변화 등)
+irrelevant 조건:
+- 기사 주체가 타사(경쟁사·대기업 등)이고 {company}는 단순 언급 수준
+- 이름이 유사한 다른 대상에 관한 기사 (동명이인, 유사 사명·브랜드, 해외 동음이의어 등)
+- 연예·문화·스포츠 소식, 단순 프로모션/할인 행사 등 투자 판단과 무관한 내용
+판단이 애매하면 irrelevant로 처리.
 기사: {articles_json}
 JSON만 출력: [{{"idx":0,"relevant":true}}]"""
 
@@ -223,11 +230,17 @@ class Classifier:
                     articles_json=json.dumps(items, ensure_ascii=False)
                 ))
                 res   = _parse(raw)
-                flags = {r["idx"]: r.get("relevant", False) for r in (res or []) if "idx" in r}
-                relevant.extend(
-                    a for j, a in enumerate(batch)
-                    if flags.get(j, True)
-                )
+                if not res:
+                    # 트리아지 응답 자체가 실패한 경우만 보류(통과) — 기사 유실 방지
+                    logger.warning(f"  [{p.name}] 트리아지 응답 실패 — 배치 {len(batch)}건 보류 통과")
+                    relevant.extend(batch)
+                else:
+                    flags = {r["idx"]: r.get("relevant", False) for r in res if "idx" in r}
+                    # 응답이 정상이면 명시적으로 relevant=true인 기사만 통과 (기본값 차단)
+                    relevant.extend(
+                        a for j, a in enumerate(batch)
+                        if flags.get(j, False)
+                    )
                 if i + self.BATCH_TRIAGE < len(to_process):
                     time.sleep(self.MIN_DELAY)
 

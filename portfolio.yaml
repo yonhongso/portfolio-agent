@@ -40,6 +40,9 @@ portfolios:
       exclude:
         - "컬리 레시피"
         - "컬리 쿠폰"
+        - "컬리넌"
+        - "Cullinan"
+        - "뉴컬리뷰"
 
     sources:
       dart: false

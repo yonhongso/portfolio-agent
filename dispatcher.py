@@ -3370,15 +3370,34 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
         "</div>"
     )
 
-    # ── M5: 다음 달 주요 이벤트
-    top_events = sorted(
+    # ── M5: 다음 달 주요 이벤트 — 기업별 1건(중복 제거), 이슈 → 다음 달 모니터링 포인트
+    _watch_map = {
+        "M&A·Exit":       "딜 진행 경과 및 당사 지분 가치·Exit 일정 영향 확인",
+        "펀딩·밸류에이션": "라운드 조건·밸류에이션 확정 여부 및 지분 희석 영향 확인",
+        "경영진 변동":     "후임 선임 일정 및 경영 공백 리스크 점검",
+        "규제·법률 리스크": "규제·소송 진행 경과 및 사업 영향 범위 점검",
+        "재무·실적":       "실적 추이 및 자금 조달 계획 모니터링",
+        "파트너십·협업":   "협업 구체화 진척 및 사업 시너지 확인",
+        "제품·기술 출시":  "시장 반응 및 매출 기여도 추적",
+        "평판·ESG":       "여론 추이 및 회사 대응 현황 점검",
+    }
+    _seen_co = set()
+    top_events = []
+    for s in sorted(
         [s for s in signals if s.action_flag in ("red", "yellow")],
         key=lambda x: (FLAG_RANK.get(x.action_flag, 2), x.portfolio_name)
-    )[:4]
+    ):
+        if s.portfolio_name in _seen_co:
+            continue
+        _seen_co.add(s.portfolio_name)
+        top_events.append(s)
+        if len(top_events) >= 4:
+            break
     event_cards = ""
     for s in top_events:
         label, color, bg = BADGE_STYLE.get(s.action_flag, BADGE_STYLE["white"])
-        summary = (s.summary_ko or s.title or "")[:60]
+        summary = _finish_summary(s.summary_ko or s.title or "", 60)
+        watch   = _watch_map.get(s.signal_type, "후속 보도 및 사업 영향 모니터링")
         event_cards += (
             f"<div style='background:#fff;border:1px solid #e2e8f0;"
             f"border-left:4px solid {color};border-radius:0 8px 8px 0;"
@@ -3389,6 +3408,8 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
             f"<span style='font-size:13px;font-weight:700;color:#0f172a'>{_esc(s.portfolio_name)}</span>"
             "</div>"
             f"<div style='font-size:12px;color:#475569;line-height:1.55'>{_esc(summary)}</div>"
+            f"<div style='font-size:12px;color:#1a2744;font-weight:600;line-height:1.55;margin-top:4px'>"
+            f"→ 다음 달: {watch}</div>"
             "</div>"
         )
     if not event_cards:
