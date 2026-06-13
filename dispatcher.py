@@ -1136,7 +1136,7 @@ _MONTHLY_INSIGHT_PROMPT = """당신은 SK네트웍스 사업개발팀의 시니�
   "top3": [
     {{"company": "회사명", "status": "핵심 현황, 15~20자 명사형", "impact": "당사 지분가치·Exit·평판 관점 영향, 15~20자", "action": "권고 대응, 15~20자"}}
   ],
-  "exec_decision": "경영층 판단 필요 사안 — 'N건 — 회사명, 내용' 형식 1문장. 없으면 '없음 — 정기 모니터링 유지'"
+  "exec_decision": "경영층 판단 필요 사안 — 'N건 — 회사명: [구체적 의사결정 사안]' 형식. 각 건마다 홀드·추가투자·Exit·손상인식·관계정리 등 액션 키워드를 반드시 포함할 것. 없으면 '없음 — 정기 모니터링 유지'"
 }}
 
 규칙:
@@ -3314,25 +3314,35 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
             r = FLAG_RANK.get(s.action_flag, 2)
             if r < _co_rank.get(s.portfolio_name, 2):
                 _co_rank[s.portfolio_name] = r
-        def _m1_col(t, c, text):
-            return ("<div>"
-                    f"<div style='margin-bottom:5px'><span style='background:{c};color:#0f172a;"
-                    f"border-radius:3px;padding:1px 8px;font-size:9.5px;font-weight:900'>{t}</span></div>"
-                    f"<div style='font-size:12px;line-height:1.6;color:rgba(255,255,255,.9)'>{_esc(text)}</div></div>")
-        _cards = ""
+        def _inline_row(tag, tag_color, text, last=False):
+            mb = "" if last else "margin-bottom:7px;"
+            return (
+                "<div style='display:flex;align-items:baseline;gap:8px;" + mb + "'>"
+                "<span style='background:" + tag_color + ";color:#0f172a;border-radius:3px;"
+                "padding:1px 7px;font-size:9.5px;font-weight:900;white-space:nowrap;flex-shrink:0'>" + tag + "</span>"
+                "<span style='font-size:12px;line-height:1.5;color:rgba(255,255,255,.88)'>" + _esc(text) + "</span>"
+                "</div>"
+            )
+        _card_list = []
         for it in _top3[:3]:
             _co = (it.get("company") or "").strip()
-            _fl = {0: "🔴", 1: "🟡", 2: "⚪"}.get(_co_rank.get(_co, 2))
-            _cards += (
-                "<div style='background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);"
-                "border-radius:10px;padding:12px 16px;margin-bottom:8px'>"
-                "<div style='display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:14px;align-items:center'>"
-                f"<div style='font-size:13px;font-weight:900;line-height:1.5'>{_fl} {_esc(_co)}</div>"
-                + _m1_col("현황", "#94a3b8", (it.get("status") or "").strip())
-                + _m1_col("영향", "#fbbf24", (it.get("impact") or "").strip())
-                + _m1_col("대응", "#6ee7b7", (it.get("action") or "").strip())
-                + "</div></div>"
+            _fl_r = _co_rank.get(_co, 2)
+            _fl = {0: "🔴", 1: "🟡", 2: "⚪"}.get(_fl_r, "⚪")
+            _bc = "#e74c3c" if _fl_r == 0 else "#fbbf24" if _fl_r == 1 else "rgba(255,255,255,.2)"
+            _card_list.append(
+                "<div style='background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);"
+                "border-top:2px solid " + _bc + ";border-radius:10px;padding:14px 16px'>"
+                "<div style='font-size:13px;font-weight:900;margin-bottom:12px'>" + _fl + " " + _esc(_co) + "</div>"
+                + _inline_row("현황", "#94a3b8", (it.get("status") or "").strip())
+                + _inline_row("영향", "#fbbf24", (it.get("impact") or "").strip())
+                + _inline_row("대응", "#6ee7b7", (it.get("action") or "").strip(), last=True)
+                + "</div>"
             )
+        _cards = (
+            "<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px'>"
+            + "".join(_card_list)
+            + "</div>"
+        )
         if _diag and _cards:
             _struct = (
                 _m1_label("🩺", "이달의 진단")
