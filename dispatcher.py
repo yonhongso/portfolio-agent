@@ -3357,7 +3357,7 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
                     "<div style='margin-top:13px;background:rgba(251,191,36,.1);border-left:3px solid #fbbf24;"
                     "border-radius:0 8px 8px 0;padding:10px 14px'>"
                     "<span style='font-size:11px;font-weight:900;letter-spacing:1px;color:#fbbf24'>⚖️ 경영층 판단 필요</span>"
-                    f"<div style='font-size:12.5px;font-weight:600;line-height:1.7;margin-top:3px'>{_esc(_exec)}</div></div>"
+                    f"<div style='font-size:13.5px;font-weight:600;line-height:1.7;margin-top:3px'>{_esc(_exec)}</div></div>"
                 )
             insight_html = _struct
     except Exception:
