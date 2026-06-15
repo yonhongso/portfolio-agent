@@ -299,7 +299,7 @@
     <!-- 좌: 제목 + 날짜 -->
     <div style="display:flex;flex-direction:column;justify-content:flex-start">
       <h1>📊 Portfolio Intelligence Dashboard</h1>
-      <div class="meta" id="last-updated-meta">CONFIDENTIAL · <!-- META-DATE -->2026-06-14 23:01<!-- /META-DATE --> 기준</div>
+      <div class="meta" id="last-updated-meta">CONFIDENTIAL · <!-- META-DATE -->2026-06-15 08:01<!-- /META-DATE --> 기준</div>
     </div>
     <!-- 우: 버튼 하단 정렬 -->
     <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;gap:6px">
@@ -367,13 +367,13 @@
         <td onclick="filterFlag('yellow')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #f39c12;
             box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
-          <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">0</div>
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">1</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">🟡 동향주시<br><span style="font-size:9px;color:#d4b96a">Watch & Report</span></div>
         </td>
         <td onclick="filterFlag('white')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #adb5bd;
             box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
-          <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">3</div>
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">5</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">⚪ 정기모니터링<br><span style="font-size:9px">Reference</span></div>
         </td>
       </tr>
@@ -387,16 +387,16 @@
         📡 오늘 시그널 감지 기업
       </div>
       <div style="display:flex;align-items:baseline;gap:4px">
-        <span style="font-size:22px;font-weight:800;color:#1a1a2e;line-height:1">1</span>
+        <span style="font-size:22px;font-weight:800;color:#1a1a2e;line-height:1">2</span>
         <span style="font-size:12px;color:#adb5bd;font-weight:500">/ 13개사</span>
       </div>
     </div>
 
     <!-- Executive Summary -->
-    <div class="exec-box" style="background:#f0fdf4;border-color:#27ae60;">
-      <span class="e-label" style="color:#27ae60;">Executive Summary</span>
+    <div class="exec-box" style="background:#fdfbf0;border-color:#f39c12;">
+      <span class="e-label" style="color:#d68910;">Executive Summary</span>
       <div class="e-main" style="color:#1a1a2e;line-height:2">
-        <div style="margin-bottom:4px">⚪ 오늘 포트폴리오 전반 특이사항 없음 — 정기모니터링 유지</div>
+        <div style="margin-bottom:4px">🟡 컬리 — 컬리N마트, 네이버 멤버십 전용 전환</div>
       </div>
     </div>
 
@@ -405,7 +405,25 @@
       <span>📋 모니터링 포인트 &amp; 권고 액션 &nbsp;|&nbsp; Monitoring &amp; Actions</span>
     </div>
 
-    <div data-flag-group="white"><div class="flag-banner white"><div><span class="fb-label">⚪ 정기모니터링</span><span class="fb-sub">Routine Track</span></div><span class="fb-pill">3건</span></div>
+    <div data-flag-group="yellow"><div class="flag-banner yellow"><div><span class="fb-label">🟡 동향주시</span><span class="fb-sub">Watch & Report</span></div><span class="fb-pill">1건</span></div>
+    <div class="co-group">
+      <div class="co-heading">
+        <span class="co-name">컬리</span>
+        <span class="co-cnt">1건</span>
+      </div>
+      
+    <div class="art-card yellow">
+      <div class="art-top">
+        <span class="sig-badge" style="background:#e0f2f1;color:#00695c">파트너십·협업</span>
+        <a href="https://news.google.com/rss/articles/CBMiTEFVX3lxTE9vMDJyTG9GUFY5cWNsNmNuTkhPbjV0dm1BZ3BqV2FobjR3b1dTZEVSUmwyRDYzQ3JhWkQxRDg4Vy04MTg1ckxyUkZjYzY?oc=5" target="_blank" class="art-src">Google News →</a>
+      </div>
+      <div class="art-hl">컬리N마트, 네이버 멤버십 전용 전환</div>
+      <div class="art-acts">
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>시너지 효과 및 사업 확장 가능성 평가 필요</div>
+        <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>시너지 영향 분석 후 주간 리포트 반영</div>
+      </div>
+    </div>
+    </div></div><div data-flag-group="white"><div class="flag-banner white"><div><span class="fb-label">⚪ 정기모니터링</span><span class="fb-sub">Routine Track</span></div><span class="fb-pill">5건</span></div>
     <div class="co-group">
       <div class="co-heading">
         <span class="co-name">컬리</span>
@@ -414,24 +432,42 @@
       
     <div class="art-card white">
       <div class="art-top">
-        <span class="sig-badge" style="background:#e0f2f1;color:#00695c">파트너십·협업</span>
-        <a href="https://news.google.com/rss/articles/CBMifEFVX3lxTFBuQmZqUUlfcTVRanNrQ0lTTThvVzFNRjdXTUhKeVJ1VWlGS3AyU3dUTWhHc0o1UjlsbzdUTzBMRnA5QWZ2VFZMZFlfSEM4YlNKWkhQb21kVzhJV1RjdTdXWmhkenlhUHNldE5MZ29IVzI2VFZVazZKX0Fiako?oc=5" target="_blank" class="art-src">Google News →</a>
+        <span class="sig-badge" style="background:#f5f5f5;color:#455a64">기타</span>
+        <a href="https://news.google.com/rss/articles/CBMiYEFVX3lxTE1KSlQxaWRQVnNIVjdzTWtCZ1FxZmtkRHdlUDc3SHlGVXRSUzF2aXZLcW1kSTA4cVlzU3BZQ0poYnRxalR6OHFiWWwwR1ViYTFKam42ZDlSVmFOczNLTTFoX9IBeEFVX3lxTFBHYm1uS183RWJBczNhN0RIMXpoZFlULXREQ08zVXBNamVZTG5JNFdYVzhmaFFFOHZVOEo0XzRjNEQxVy0tLXdoa3c0ZjQ5VkxaWkJVbFZ4bTBOYldodlpqR0JMVnFLSFNWbnhFd05QSlpNcGhuNUZNRg?oc=5" target="_blank" class="art-src">Google News →</a>
       </div>
-      <div class="art-hl">네이버, 컬리 운영혁신 협력</div>
+      <div class="art-hl">컬리, 뷰티컬리페스타 최대 79% 할인</div>
       <div class="art-acts">
-        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>시너지 효과 및 사업 확장 가능성 평가 필요</div>
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>추가 정보 수집 후 판단 필요</div>
         <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>참고 유지 / 반복 출현 시 상위 플래그 검토</div>
       </div>
     </div>
 
     <div class="art-card white">
       <div class="art-top">
-        <span class="sig-badge" style="background:#ffebee;color:#c62828">규제·법률 리스크</span>
-        <a href="https://www.seoul.co.kr/news/editOpinion/editorial/2026/06/12/20260612027002?wlog_tag3=naver" target="_blank" class="art-src">Naver_News →</a>
+        <span class="sig-badge" style="background:#e0f2f1;color:#00695c">파트너십·협업</span>
+        <a href="https://news.google.com/rss/articles/CBMifEFVX3lxTFBuQmZqUUlfcTVRanNrQ0lTTThvVzFNRjdXTUhKeVJ1VWlGS3AyU3dUTWhHc0o1UjlsbzdUTzBMRnA5QWZ2VFZMZFlfSEM4YlNKWkhQb21kVzhJV1RjdTdXWmhkenlhUHNldE5MZ29IVzI2VFZVazZKX0Fiako?oc=5" target="_blank" class="art-src">Google News →</a>
       </div>
-      <div class="art-hl">대형마트 의무 휴업 규제 비판</div>
+      <div class="art-hl">네이버·컬리, 운영혁신 동맹</div>
       <div class="art-acts">
-        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>법적 리스크 노출 수준 및 재무 영향 검토 요망</div>
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>시너지 효과 및 사업 확장 가능성 평가 필요</div>
+        <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>참고 유지 / 반복 출현 시 상위 플래그 검토</div>
+      </div>
+    </div>
+    </div>
+    <div class="co-group">
+      <div class="co-heading">
+        <span class="co-name">차봇모빌리티</span>
+        <span class="co-cnt">1건</span>
+      </div>
+      
+    <div class="art-card white">
+      <div class="art-top">
+        <span class="sig-badge" style="background:#e8f5e9;color:#2e7d32">제품·기술 출시</span>
+        <a href="https://news.google.com/rss/articles/CBMiVkFVX3lxTE5Gczc4aFpQczhnREZPZmJmNFZRSDNQcDZSNExGbFM0MFl5OWVLNHZicEd5RUs2VDcycWhFSDZjVHNvT0FnYl9CTml0OWJ6d2lRSmZiSzVR?oc=5" target="_blank" class="art-src">Google News →</a>
+      </div>
+      <div class="art-hl">차봇모빌리티, 3D 버추얼 쇼룸 오픈</div>
+      <div class="art-acts">
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>시장 경쟁력 및 매출 영향 점검</div>
         <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>참고 유지 / 반복 출현 시 상위 플래그 검토</div>
       </div>
     </div>
@@ -443,7 +479,54 @@
     <!-- 서브탭2: 커뮤니케이션 초안 -->
     <div id="subtab-drafts" style="display:none">
 <!-- DRAFTS-AUTO-START -->
-<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br><span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>
+
+    <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
+                padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7d4e00">
+      💡 <b>사용 방법:</b> 각 항목을 클릭하면 초안이 펼쳐집니다. <b>복사</b> 버튼으로 카카오톡·이메일에 붙여넣기 하세요.
+      <span style="float:right;font-size:11px;background:#fff;border-radius:4px;padding:2px 8px;color:#495057">🟡 동향주시 시그널 대상 · 1건</span>
+    </div>
+    
+      <div style="margin-bottom:20px">
+        <div style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #e9ecef">
+          <span style="background:#f3e5f5;color:#6c3483;border-radius:4px;padding:2px 8px;font-size:10px;margin-right:8px">파트너십·협업</span>
+          컬리
+        </div>
+        <div style="font-size:12px;color:#495057;margin-bottom:8px">컬리N마트, 네이버 멤버십 전용 전환</div>
+        
+        <div style="background:#fff;border-radius:8px;border:1px solid #e9ecef;margin-bottom:10px;overflow:hidden">
+          <div style="background:#f8f9fa;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+               onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <span style="font-size:12px;font-weight:700;color:#495057">📤 경영진 보고용 (내부)</span>
+            <span style="font-size:11px;color:#6c757d">▼ 펼치기</span>
+          </div>
+          <div style="display:none;padding:12px 14px">
+            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px;font-family:'Malgun Gothic','맑은 고딕',sans-serif">[파트너십·협업] 컬리N마트가 네이버 멤버십 전용 서비스로 전환됨을 확인했습니다.
+네이버의 서비스 전환으로 수익성 및 고객 증가 가능성 주목됨.
+추가적인 영향 분석 및 전략적 검토 부탁드립니다.
+보고드립니다.</pre>
+            <button onclick="navigator.clipboard.writeText('[파트너십·협업] 컬리N마트가 네이버 멤버십 전용 서비스로 전환됨을 확인했습니다.\n네이버의 서비스 전환으로 수익성 및 고객 증가 가능성 주목됨.\n추가적인 영향 분석 및 전략적 검토 부탁드립니다.\n보고드립니다.').then(()=>{this.textContent='✓ 복사됨';setTimeout(()=>this.textContent='복사',2000)})"
+                    style="font-size:11px;padding:5px 16px;background:#1a2744;color:#fff;border:none;border-radius:5px;cursor:pointer">복사</button>
+          </div>
+        </div>
+        
+        <div style="background:#fff;border-radius:8px;border:1px solid #e9ecef;margin-bottom:10px;overflow:hidden">
+          <div style="background:#f8f9fa;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+               onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <span style="font-size:12px;font-weight:700;color:#495057">📧 포트폴리오사 대표 연락용</span>
+            <span style="font-size:11px;color:#6c757d">▼ 펼치기</span>
+          </div>
+          <div style="display:none;padding:12px 14px">
+            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px;font-family:'Malgun Gothic','맑은 고딕',sans-serif">안녕하세요, SK networks 사업개발팀입니다.
+컬리N마트의 네이버 멤버십 전용 서비스 전환 소식을 언론을 통해 접했습니다.
+이번 전환이 컬리의 장기 전략 및 수익 모델에 미칠 영향을 알고 싶습니다.
+필요하다면 미팅이나 전화 통화를 통해 상세히 논의할 수 있으면 좋겠습니다.
+SK networks는 이번 전환을 지원할 방안을 모색하고자 합니다.</pre>
+            <button onclick="navigator.clipboard.writeText('안녕하세요, SK networks 사업개발팀입니다.\n컬리N마트의 네이버 멤버십 전용 서비스 전환 소식을 언론을 통해 접했습니다.\n이번 전환이 컬리의 장기 전략 및 수익 모델에 미칠 영향을 알고 싶습니다.\n필요하다면 미팅이나 전화 통화를 통해 상세히 논의할 수 있으면 좋겠습니다.\nSK networks는 이번 전환을 지원할 방안을 모색하고자 합니다.').then(()=>{this.textContent='✓ 복사됨';setTimeout(()=>this.textContent='복사',2000)})"
+                    style="font-size:11px;padding:5px 16px;background:#1a2744;color:#fff;border:none;border-radius:5px;cursor:pointer">복사</button>
+          </div>
+        </div>
+      </div>
+
   <!-- DRAFTS-AUTO-END -->
     </div><!-- /subtab-drafts -->
 
