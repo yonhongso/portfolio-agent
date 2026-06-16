@@ -299,7 +299,7 @@
     <!-- 좌: 제목 + 날짜 -->
     <div style="display:flex;flex-direction:column;justify-content:flex-start">
       <h1>📊 Portfolio Intelligence Dashboard</h1>
-      <div class="meta" id="last-updated-meta">CONFIDENTIAL · <!-- META-DATE -->2026-06-16 05:09<!-- /META-DATE --> 기준</div>
+      <div class="meta" id="last-updated-meta">CONFIDENTIAL · <!-- META-DATE -->2026-06-16 14:02<!-- /META-DATE --> 기준</div>
     </div>
     <!-- 우: 버튼 하단 정렬 -->
     <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;gap:6px">
@@ -367,13 +367,13 @@
         <td onclick="filterFlag('yellow')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #f39c12;
             box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
-          <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">0</div>
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#d68910">1</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">🟡 동향주시<br><span style="font-size:9px;color:#d4b96a">Watch & Report</span></div>
         </td>
         <td onclick="filterFlag('white')" style="background:#fff;border-radius:10px;padding:16px 8px 14px;
             text-align:center;border-top:3px solid #adb5bd;
             box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:opacity .15s">
-          <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">1</div>
+          <div style="font-size:34px;font-weight:800;line-height:1;color:#868e96">4</div>
           <div style="font-size:10.5px;color:#adb5bd;margin-top:5px;line-height:1.5;font-weight:500">⚪ 정기모니터링<br><span style="font-size:9px">Reference</span></div>
         </td>
       </tr>
@@ -387,16 +387,16 @@
         📡 오늘 시그널 감지 기업
       </div>
       <div style="display:flex;align-items:baseline;gap:4px">
-        <span style="font-size:22px;font-weight:800;color:#1a1a2e;line-height:1">1</span>
+        <span style="font-size:22px;font-weight:800;color:#1a1a2e;line-height:1">2</span>
         <span style="font-size:12px;color:#adb5bd;font-weight:500">/ 13개사</span>
       </div>
     </div>
 
     <!-- Executive Summary -->
-    <div class="exec-box" style="background:#f0fdf4;border-color:#27ae60;">
-      <span class="e-label" style="color:#27ae60;">Executive Summary</span>
+    <div class="exec-box" style="background:#fdfbf0;border-color:#f39c12;">
+      <span class="e-label" style="color:#d68910;">Executive Summary</span>
       <div class="e-main" style="color:#1a1a2e;line-height:2">
-        <div style="margin-bottom:4px">⚪ 오늘 포트폴리오 전반 특이사항 없음 — 정기모니터링 유지</div>
+        <div style="margin-bottom:4px">🟡 컬리 — 컬리·에이블리, IPO 가능성 탐색</div>
       </div>
     </div>
 
@@ -405,7 +405,25 @@
       <span>📋 모니터링 포인트 &amp; 권고 액션 &nbsp;|&nbsp; Monitoring &amp; Actions</span>
     </div>
 
-    <div data-flag-group="white"><div class="flag-banner white"><div><span class="fb-label">⚪ 정기모니터링</span><span class="fb-sub">Routine Track</span></div><span class="fb-pill">1건</span></div>
+    <div data-flag-group="yellow"><div class="flag-banner yellow"><div><span class="fb-label">🟡 동향주시</span><span class="fb-sub">Watch & Report</span></div><span class="fb-pill">1건</span></div>
+    <div class="co-group">
+      <div class="co-heading">
+        <span class="co-name">컬리</span>
+        <span class="co-cnt">1건</span>
+      </div>
+      
+    <div class="art-card yellow">
+      <div class="art-top">
+        <span class="sig-badge" style="background:#f3e5f5;color:#6c3483">M&A·Exit</span>
+        <a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTE9DUUZvLUd4X2dKRDdBcm5tUlFwektJS2FraG1EbWJQSTBzOHZMbVdsTWlmUjJxSnBndW1zd3FyVGpLV2lGbDYyLUdiV1JmVGRtYlBF?oc=5" target="_blank" class="art-src">Google News →</a>
+      </div>
+      <div class="art-hl">컬리·에이블리, IPO 가능성 탐색</div>
+      <div class="art-acts">
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>Exit 기회 또는 희석 위험 즉각 검토 요망</div>
+        <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>이번 주 내 IR 미팅 요청 / 동향 파악</div>
+      </div>
+    </div>
+    </div></div><div data-flag-group="white"><div class="flag-banner white"><div><span class="fb-label">⚪ 정기모니터링</span><span class="fb-sub">Routine Track</span></div><span class="fb-pill">4건</span></div>
     <div class="co-group">
       <div class="co-heading">
         <span class="co-name">업스테이지</span>
@@ -414,12 +432,42 @@
       
     <div class="art-card white">
       <div class="art-top">
-        <span class="sig-badge" style="background:#f5f5f5;color:#455a64">기타</span>
-        <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9lN1dIcHh6VXpmM0lNazNUeGhfU3p4c2dNUjZCOUJuOHRqNS1lQmtUQlJlb1AzSVVfaHBlUmpOQnhUU01Wd1pqUkFpR0NESTI0ZkU2VkVjbGFZN1XSAWBBVV95cUxOdl9pc2Z5czNkRWQzUmZycDZOR0pCSGFadlUtZnROVTdhRUZVSVB0enlmWm5zNzVZa21qSDYyM2ZvZ2FHZzNBak5xMzJNcENNdHY1d2NSYzNnWlV6WUJxWUU?oc=5" target="_blank" class="art-src">Google News →</a>
+        <span class="sig-badge" style="background:#e8f5e9;color:#2e7d32">제품·기술 출시</span>
+        <a href="https://news.google.com/rss/articles/CBMiT0FVX3lxTE92R2F4RV8wb1RPSklvbTdXd1k5MlVVa3NralJYZEtoVDU5WVNMeEJWcmx3dF9rUXZDSXA5eHd3bTNjZTZvREZSLXN3Rjk5Tzg?oc=5" target="_blank" class="art-src">Google News →</a>
       </div>
-      <div class="art-hl">업스테이지, 모두를 위한 AI 시대 연다</div>
+      <div class="art-hl">업스테이지, AI 통합 플랫폼 출범</div>
       <div class="art-acts">
-        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>추가 정보 수집 후 판단 필요</div>
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>시장 경쟁력 및 매출 영향 점검</div>
+        <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>참고 유지 / 반복 출현 시 상위 플래그 검토</div>
+      </div>
+    </div>
+    </div>
+    <div class="co-group">
+      <div class="co-heading">
+        <span class="co-name">컬리</span>
+        <span class="co-cnt">2건</span>
+      </div>
+      
+    <div class="art-card white">
+      <div class="art-top">
+        <span class="sig-badge" style="background:#ffebee;color:#c62828">규제·법률 리스크</span>
+        <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTE1ybldRZ2FJdG54ai1Id3pUYUEtWFlDdXRsTE56SjE5WmV3R29ZYWI5U1p6UVhycld4TUVSdEFKNGVLSndMR2VDN3BUWTJzbGZKakZpRU1LUW1yTDIyTUZadjcxLWljZVN6TlpuSnVnNlMxOGpSbmNBSG5DUdIBgAFBVV95cUxNTEFQT3hQTUIzSW1yZ2R5Tm82empPZS1xT1VHMU1VRFliR19Rd282Tkx5eGhsWVBEbE1zUzFSUGNBZHJhZHdQNTkxWEh4dEhJQVpDdkx5cy1EQzc5SVQtZDRFbnl0YUw1SVoyclRIUWpHRk16VlotOTJ2NGZMQTJFVA?oc=5" target="_blank" class="art-src">Google News →</a>
+      </div>
+      <div class="art-hl">마트 규제 완화, 새벽배송 변화 가능성</div>
+      <div class="art-acts">
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>법적 리스크 노출 수준 및 재무 영향 검토 요망</div>
+        <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>참고 유지 / 반복 출현 시 상위 플래그 검토</div>
+      </div>
+    </div>
+
+    <div class="art-card white">
+      <div class="art-top">
+        <span class="sig-badge" style="background:#e8f5e9;color:#2e7d32">제품·기술 출시</span>
+        <a href="https://www.hankyung.com/article/2026061577231" target="_blank" class="art-src">Naver_News →</a>
+      </div>
+      <div class="art-hl">컬리, 뷰티컬리 서비스 성장 지속</div>
+      <div class="art-acts">
+        <div class="act-impl"><span style="font-size:10px;font-weight:700;background:#d1d8e0;color:#495057;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">시사점</span>시장 경쟁력 및 매출 영향 점검</div>
         <div class="act-do"><span style="font-size:10px;font-weight:700;background:#e74c3c;color:#fff;border-radius:3px;padding:1px 8px;margin-right:7px;display:inline-block">권고액션</span>참고 유지 / 반복 출현 시 상위 플래그 검토</div>
       </div>
     </div>
@@ -431,7 +479,49 @@
     <!-- 서브탭2: 커뮤니케이션 초안 -->
     <div id="subtab-drafts" style="display:none">
 <!-- DRAFTS-AUTO-START -->
-<div style="text-align:center;padding:40px;color:#adb5bd;font-size:14px">오늘 즉시검토·동향주시 시그널이 없어 초안이 생성되지 않았습니다.<br><span style="font-size:12px">내일 GitHub Actions 실행 후 자동 업데이트됩니다.</span></div>
+
+    <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:0 8px 8px 0;
+                padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7d4e00">
+      💡 <b>사용 방법:</b> 각 항목을 클릭하면 초안이 펼쳐집니다. <b>복사</b> 버튼으로 카카오톡·이메일에 붙여넣기 하세요.
+      <span style="float:right;font-size:11px;background:#fff;border-radius:4px;padding:2px 8px;color:#495057">🟡 동향주시 시그널 대상 · 1건</span>
+    </div>
+    
+      <div style="margin-bottom:20px">
+        <div style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #e9ecef">
+          <span style="background:#f3e5f5;color:#6c3483;border-radius:4px;padding:2px 8px;font-size:10px;margin-right:8px">M&A·Exit</span>
+          컬리
+        </div>
+        <div style="font-size:12px;color:#495057;margin-bottom:8px">컬리·에이블리, IPO 가능성 탐색</div>
+        
+        <div style="background:#fff;border-radius:8px;border:1px solid #e9ecef;margin-bottom:10px;overflow:hidden">
+          <div style="background:#f8f9fa;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+               onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <span style="font-size:12px;font-weight:700;color:#495057">📤 경영진 보고용 (내부)</span>
+            <span style="font-size:11px;color:#6c757d">▼ 펼치기</span>
+          </div>
+          <div style="display:none;padding:12px 14px">
+            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px;font-family:'Malgun Gothic','맑은 고딕',sans-serif">[M&A·Exit] 컬리와 에이블리의 IPO 가능성 보도가 있었습니다. 잠재적 IPO 계획이 당사의 지분 구조와 Exit 일정에 미칠 영향을 파악할 필요가 있습니다. 추가 검토와 지침 요청드립니다. 보고드립니다.</pre>
+            <button onclick="navigator.clipboard.writeText('[M&A·Exit] 컬리와 에이블리의 IPO 가능성 보도가 있었습니다. 잠재적 IPO 계획이 당사의 지분 구조와 Exit 일정에 미칠 영향을 파악할 필요가 있습니다. 추가 검토와 지침 요청드립니다. 보고드립니다.').then(()=>{this.textContent='✓ 복사됨';setTimeout(()=>this.textContent='복사',2000)})"
+                    style="font-size:11px;padding:5px 16px;background:#1a2744;color:#fff;border:none;border-radius:5px;cursor:pointer">복사</button>
+          </div>
+        </div>
+        
+        <div style="background:#fff;border-radius:8px;border:1px solid #e9ecef;margin-bottom:10px;overflow:hidden">
+          <div style="background:#f8f9fa;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+               onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <span style="font-size:12px;font-weight:700;color:#495057">📧 포트폴리오사 대표 연락용</span>
+            <span style="font-size:11px;color:#6c757d">▼ 펼치기</span>
+          </div>
+          <div style="display:none;padding:12px 14px">
+            <pre style="font-size:12px;color:#343a40;white-space:pre-wrap;line-height:1.6;margin-bottom:10px;font-family:'Malgun Gothic','맑은 고딕',sans-serif">안녕하세요, SK networks 사업개발팀입니다.
+최근 보도된 컬리와 에이블리의 IPO 가능성에 대한 기사를 접했습니다. 현재 IPO 진행 여부 및 계획에 대해 확인 부탁드립니다. 특히, 우리 회사의 지분 구조와 Exit 전략에 미칠 영향이 궁금합니다.
+가능하시다면 논의를 위해 미팅이나 전화를 제안드리며, 필요한 부분에서 지원할 준비가 되어있습니다.</pre>
+            <button onclick="navigator.clipboard.writeText('안녕하세요, SK networks 사업개발팀입니다.\n최근 보도된 컬리와 에이블리의 IPO 가능성에 대한 기사를 접했습니다. 현재 IPO 진행 여부 및 계획에 대해 확인 부탁드립니다. 특히, 우리 회사의 지분 구조와 Exit 전략에 미칠 영향이 궁금합니다.\n가능하시다면 논의를 위해 미팅이나 전화를 제안드리며, 필요한 부분에서 지원할 준비가 되어있습니다.').then(()=>{this.textContent='✓ 복사됨';setTimeout(()=>this.textContent='복사',2000)})"
+                    style="font-size:11px;padding:5px 16px;background:#1a2744;color:#fff;border:none;border-radius:5px;cursor:pointer">복사</button>
+          </div>
+        </div>
+      </div>
+
   <!-- DRAFTS-AUTO-END -->
     </div><!-- /subtab-drafts -->
 
