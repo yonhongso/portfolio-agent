@@ -1,0 +1,42 @@
+name: Telegram Log Collector
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # 30분마다 실행 (KST 무관)
+  workflow_dispatch:           # 수동 실행 버튼
+
+jobs:
+  collect-log:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Collect /log messages from Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          mkdir -p data
+          python -u telegram_log_collector.py
+
+      - name: Commit log data if changed
+        run: |
+          git config user.name "Portfolio Agent Bot"
+          git config user.email "action@github.com"
+          git add data/action_log.json data/telegram_log_offset.txt 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "log: telegram /log sync $(date +'%Y-%m-%d %H:%M KST')"
+          git push || true

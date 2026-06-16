@@ -2887,6 +2887,63 @@ def save_dashboard(signals: list[ClassifiedSignal],
     return path
 
 
+def _build_weekly_modal(cells: list) -> str:
+    """히트맵 셀 클릭 시 표시되는 기사 상세 모달 HTML+JS."""
+    import json as _json_wm
+    cells_json = _json_wm.dumps(
+        {str(i): c for i, c in enumerate(cells)},
+        ensure_ascii=False
+    ).replace("</", "<\/")
+    return (
+        "<div id='wk-overlay' onclick='wkClose(event)' "
+        "style='display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);"
+        "z-index:9999;align-items:center;justify-content:center'>"
+        "<div id='wk-modal' style='background:#fff;border-radius:16px;width:540px;"
+        "max-width:94vw;max-height:80vh;display:flex;flex-direction:column;"
+        "box-shadow:0 24px 60px rgba(15,23,42,.22)'>"
+        "<div style='padding:18px 20px 14px;border-bottom:1px solid #f1f5f9;position:relative'>"
+        "<div style='font-size:15px;font-weight:900;color:#0f172a;margin-bottom:4px' id='wk-title'></div>"
+        "<div style='font-size:12px;color:#64748b' id='wk-sub'></div>"
+        "<button onclick=\"document.getElementById('wk-overlay').style.display='none'\" "
+        "style='position:absolute;right:16px;top:50%;transform:translateY(-50%);"
+        "width:28px;height:28px;border-radius:50%;background:#f1f5f9;border:none;"
+        "cursor:pointer;font-size:15px;color:#64748b;line-height:1'>✕</button>"
+        "</div>"
+        "<div id='wk-body' style='overflow-y:auto;padding:14px 20px 18px;flex:1'></div>"
+        "</div></div>"
+        "<script>(function(){"
+        f"var WK={cells_json};"
+        "var FL={red:{label:'즉시검토',bg:'#fde8e8',color:'#A32D2D'},"
+        "yellow:{label:'동향주시',bg:'#fef3cd',color:'#854F0B'},"
+        "white:{label:'정기모니터링',bg:'#dcfce7',color:'#166534'}};"
+        "function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')"
+        ".replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}"
+        "window.wkModal=function(el){"
+        "var idx=el.getAttribute('data-wk');var d=WK[idx];if(!d)return;"
+        "document.getElementById('wk-title').textContent=d.co+' · '+d.day;"
+        "document.getElementById('wk-sub').textContent='총 '+d.articles.length+'건 · 제목 또는 원문 보기 클릭으로 이동';"
+        "var html='';d.articles.forEach(function(a){"
+        "var f=FL[a.flag]||FL.white;"
+        "var url=a.url&&a.url!='#'?a.url:'';"
+        "html+='<div style=\"padding:12px 0;border-bottom:1px solid #f8fafc\">' ;"
+        "html+='<div style=\"display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap\">' ;"
+        "html+='<span style=\"background:'+f.bg+';color:'+f.color+';border:1px solid '+f.color+';border-radius:4px;padding:2px 8px;font-size:10px;font-weight:900\">'+f.label+'</span>' ;"
+        "html+='<span style=\"background:#f1f5f9;color:#475569;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700\">'+esc(a.type)+'</span>' ;"
+        "html+='</div>' ;"
+        "if(url){html+='<div style=\"font-size:13px;font-weight:600;color:#0f172a;line-height:1.5;margin-bottom:4px\"><a href=\"'+esc(url)+'\" target=\"_blank\" style=\"color:#0f172a;text-decoration:none\">'+esc(a.title)+'</a></div>';}"
+        "else{html+='<div style=\"font-size:13px;font-weight:600;color:#0f172a;line-height:1.5;margin-bottom:4px\">'+esc(a.title)+'</div>';}"
+        "html+='<div style=\"font-size:11px;color:#94a3b8;margin-bottom:6px\">'+esc(a.source)+' · '+esc(a.date)+'</div>' ;"
+        "if(url){html+='<a href=\"'+esc(url)+'\" target=\"_blank\" style=\"display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#2563eb;text-decoration:none;padding:4px 10px;border:1px solid #bfdbfe;border-radius:5px;background:#eff6ff\">🔗 원문 보기</a>';}"
+        "html+='</div>';});"
+        "document.getElementById('wk-body').innerHTML=html;"
+        "var ov=document.getElementById('wk-overlay');"
+        "ov.style.display='flex';};"
+        "window.wkClose=function(e){if(e.target===document.getElementById('wk-overlay'))"
+        "document.getElementById('wk-overlay').style.display='none';};"
+        "})();</script>"
+    )
+
+
 def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) -> str:
     """Weekly 탭: 요일별 히트맵 + 수렴 리스크 + 다음 주 모니터링."""
     from collections import defaultdict as _dd
@@ -3016,6 +3073,7 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
 
     # ── 히트맵 행
     heatmap_rows = ""
+    js_wk_cells = []   # 모달용 기사 데이터 (index -> {co, day, articles})
     for co in sorted_cos:
         items = by_co[co]
         best_flag = min(FLAG_RANK.get(_flag(x), 2) for x in items)
@@ -3039,12 +3097,27 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
                 bg, fg, border = "#fef3c7", "#d97706", "#fde68a"
             else:
                 bg, fg, border = "#dcfce7", "#16a34a", "#bbf7d0"
-            tooltip = _esc("\n".join(_truncate(_title(x), 48) for x in day_items[:5]))
+            cell_idx = len(js_wk_cells)
+            day_label = f"{WEEKDAY_KR[day.weekday()]} {_fmt_md(day)}"
+            js_wk_cells.append({
+                "co": co, "day": day_label,
+                "articles": [
+                    {"title": _title(x),
+                     "url": str(getattr(x, "url", "") or ""),
+                     "flag": _flag(x),
+                     "type": str(getattr(x, "signal_type", "기타") or "기타"),
+                     "summary": _summary(x),
+                     "date": str(getattr(x, "published_at", "") or "")[:10],
+                     "source": str(getattr(x, "source", "") or "")}
+                    for x in day_items
+                ],
+            })
             row_cells += (
-                f"<td title='{tooltip}' style='text-align:center;padding:8px'>"
-                "<span style='display:inline-flex;align-items:center;justify-content:center;"
+                f"<td style='text-align:center;padding:8px'>"
+                f"<span data-wk='{cell_idx}' onclick='wkModal(this)' "
+                "style='display:inline-flex;align-items:center;justify-content:center;"
                 f"min-width:30px;height:28px;background:{bg};color:{fg};border:1px solid {border};"
-                f"border-radius:8px;font-size:13px;font-weight:900'>{n}</span></td>"
+                f"border-radius:8px;font-size:13px;font-weight:900;cursor:pointer'>{n}</span></td>"
             )
 
         heatmap_rows += (
@@ -3224,6 +3297,7 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         f"{monitoring_items}"
         "</div></div>"
         "</div>"  # outer end
+        + _build_weekly_modal(js_wk_cells)
     )
 
 
@@ -3456,14 +3530,56 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
                       "padding:18px;text-align:center;color:#94a3b8;font-size:12px'>"
                       "이달 M&A · Exit · IPO 시그널 없음</div>")
 
-    # ── M4: 팀 액션 로그 (placeholder)
-    action_log = (
-        "<div style='background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;"
-        "padding:28px;text-align:center;color:#94a3b8'>"
-        "<div style='font-size:13px;font-weight:600;margin-bottom:6px'>아직 이번 달 액션 로그가 없습니다</div>"
-        "<div style='font-size:11px'>텔레그램 봇 /log 명령어 연동 후 자동 수집됩니다</div>"
-        "</div>"
-    )
+    # ── M4: 팀 액션 로그 (텔레그램 /log 연동)
+    import json as _json_m4
+    from pathlib import Path as _Path_m4
+    _log_file = _Path_m4("data/action_log.json")
+    _log_entries = []
+    if _log_file.exists():
+        try:
+            _all_entries = _json_m4.loads(_log_file.read_text(encoding="utf-8"))
+            _month_prefix = _m_start.strftime("%Y-%m")
+            _log_entries = [e for e in _all_entries if str(e.get("ts", "")).startswith(_month_prefix)]
+        except Exception:
+            _log_entries = []
+
+    if _log_entries:
+        from html import escape as _esc_log
+        _log_rows = ""
+        for _e in _log_entries:
+            _ts = _e.get("ts", "")
+            _author = _e.get("author", "")
+            _content = _e.get("content", "")
+            _log_rows += (
+                "<div style='display:flex;gap:12px;padding:10px 0;"
+                "border-bottom:1px solid #f1f5f9;align-items:flex-start'>"
+                "<div style='min-width:90px;font-size:11px;color:#94a3b8;padding-top:2px'>"
+                f"{_esc_log(_ts[:10])}<br>{_esc_log(_ts[11:16])}</div>"
+                "<div style='flex:1'>"
+                f"<div style='font-size:13px;color:#0f172a;line-height:1.6'>{_esc_log(_content)}</div>"
+                + (f"<div style='font-size:11px;color:#94a3b8;margin-top:2px'>— {_esc_log(_author)}</div>" if _author else "")
+                + "</div></div>"
+            )
+        action_log = (
+            "<div style='background:#fff;border:1px solid #e2e8f0;border-radius:10px;"
+            "padding:4px 16px 8px'>"
+            + _log_rows
+            + "<div style='font-size:11px;color:#94a3b8;padding:8px 0;text-align:right'>"
+            f"총 {len(_log_entries)}건 · 텔레그램 /log 로 추가 가능</div>"
+            "</div>"
+        )
+    else:
+        action_log = (
+            "<div style='background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;"
+            "padding:28px;text-align:center;color:#94a3b8'>"
+            "<div style='font-size:13px;font-weight:600;margin-bottom:8px'>이번 달 액션 로그가 없습니다</div>"
+            "<div style='font-size:12px;line-height:1.8;color:#64748b'>"
+            "텔레그램 봇에 아래 형식으로 전송하면 자동 수집됩니다<br>"
+            "<code style='background:#f1f5f9;padding:2px 8px;border-radius:4px;font-size:12px'>"
+            "/log [내용]</code><br>"
+            "<span style='font-size:11px;color:#94a3b8'>예시: /log 컬리 경영진 대응 미팅 완료</span>"
+            "</div></div>"
+        )
 
     # ── M5: 다음 달 주요 이벤트 — 기업별 1건(중복 제거), 이슈 → 다음 달 모니터링 포인트
     _watch_map = {
