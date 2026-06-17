@@ -2845,18 +2845,14 @@ def save_dashboard(signals: list[ClassifiedSignal],
         "<!-- DAILY-AUTO-START -->", "<!-- DAILY-AUTO-END -->",
         _build_daily_overview_section(signals, generated_at))
 
-    # ── 2. Weekly 섹션 — 최근 완결 주(월~일) 기준, 동일 기간이면 재생성 생략 (주 1회 갱신)
+    # ── 2. Weekly 섹션 — 매 실행마다 재생성 (히트맵 모달 최신 반영)
     from signal_db import SignalDB as _SDB
     _w_start, _w_end = _SDB.weekly_range()
-    _w_token = f"<!-- WEEKLY-PERIOD:{_w_start.strftime('%Y-%m-%d')}~{_w_end.strftime('%Y-%m-%d')} -->"
     _weekly = weekly_signals if weekly_signals else signals
     if "<!-- WEEKLY-AUTO-START -->" in html:
-        if _w_token in html:
-            logger.info(f"[Dashboard] Weekly 동일 기간 — 갱신 생략 {_w_token}")
-        else:
-            html = _inject_section(html,
-                "<!-- WEEKLY-AUTO-START -->", "<!-- WEEKLY-AUTO-END -->",
-                _w_token + _build_weekly_section(_weekly, generated_at))
+        html = _inject_section(html,
+            "<!-- WEEKLY-AUTO-START -->", "<!-- WEEKLY-AUTO-END -->",
+            _build_weekly_section(_weekly, generated_at))
 
     # ── 3. Monthly 섹션 — 전월(1일~말일) 기준, 동일 월이면 재생성 생략 (월 1회 갱신)
     _m_start, _m_end = _SDB.monthly_range()
