@@ -1966,6 +1966,33 @@ class Dispatcher:
         except Exception as e:
             logger.warning(f"[Telegram] 일일 요약 발송 실패: {e}")
 
+    def send_telegram_realtime(self, signals: list):
+        """수시 알림: 신규 red/yellow 시그널만, 건수 헤더 없이 발송."""
+        if not self.cfg["dispatch"]["telegram"]["enabled"]:
+            return
+        targets = [s for s in signals if s.action_flag in ("red", "yellow")]
+        if not targets:
+            print("[Telegram] 신규 red/yellow 없음 → 발송 생략", flush=True)
+            return
+        lines = []
+        for s in targets:
+            emoji = "🔴" if s.action_flag == "red" else "🟡"
+            summary = (s.summary_ko or s.title or "")[:60]
+            url = (getattr(s, "url", "") or "").strip()
+            parts = [
+                f"{emoji} <b>{s.portfolio_name}</b> [{s.signal_type}]",
+                f"   {summary}",
+            ]
+            if url:
+                parts.append(f'   🔗 <a href="{url}">원문 보기</a>')
+            lines.append("\n".join(parts))
+        msg = "\n\n".join(lines)
+        try:
+            self.telegram.send(msg)
+            print(f"[Telegram] realtime {len(targets)}건 발송", flush=True)
+        except Exception as e:
+            logger.warning(f"[Telegram] realtime 발송 실패: {e}")
+
     # ── 텔레그램 "기사 없음" 알림
     def send_telegram_no_news(self):
         """오늘 수집된 기사가 없을 때 텔레그램으로 알림."""

@@ -206,8 +206,15 @@ except Exception as e:
         print("dashboard FAIL: {}".format(e2), flush=True)
         traceback.print_exc()
 
-print("[3/3] telegram alerts... (telegram_realtime.yml 워크플로우가 담당)", flush=True)
-print("telegram OK", flush=True)
+print("[3/3] telegram daily summary (17:00 KST only)...", flush=True)
+if datetime.now(KST).hour >= 12:
+    try:
+        dispatcher.send_telegram_alerts(signals)
+        print("telegram daily summary OK", flush=True)
+    except Exception as e:
+        print("telegram daily summary FAIL: " + str(e), flush=True)
+else:
+    print("telegram daily summary skip (08시 실행 — 17시에만 발송)", flush=True)
 
 print("[3/3] email...", flush=True)
 try:
