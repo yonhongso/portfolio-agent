@@ -1969,7 +1969,7 @@ class Dispatcher:
         """수시 알림: 모든 시그널 포함, 건수 헤더 없이 발송."""
         if not self.cfg["dispatch"]["telegram"]["enabled"]:
             return
-        targets = [s for s in signals if s.action_flag in ("red", "yellow", "white")]
+        targets = [s for s in signals if s.action_flag in ("red", "yellow")]
         if not targets:
             print("[Telegram] 신규 시그널 없음 → 발송 생략", flush=True)
             return

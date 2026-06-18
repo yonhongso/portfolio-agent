@@ -207,7 +207,7 @@ except Exception as e:
         traceback.print_exc()
 
 print("[3/3] telegram daily summary (17:00 KST only)...", flush=True)
-if datetime.now(KST).hour >= 12:
+if datetime.now(KST).hour == 17:
     try:
         dispatcher.send_telegram_alerts(signals)
         print("telegram daily summary OK", flush=True)
