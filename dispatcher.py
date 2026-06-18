@@ -1067,21 +1067,22 @@ def build_daily_pdf(signals: list[ClassifiedSignal], date_str: str) -> bytes:
 # =============================================================================
 
 def _call_claude(prompt: str,
-                 model: str = "gpt-4o",
+                 model: str = "claude-haiku-4-5-20251001",
                  max_tokens: int = 1200) -> str:
     """
-    OpenAI GPT API 호출 (Weekly·Monthly 심층 분석 전용).
+    Anthropic Claude API 호출 (Weekly·Monthly 심층 분석 전용).
     실패 시 빈 문자열 반환 → 호출부에서 폴백 처리.
     """
     api_key = os.getenv("ANTHROPIC_API_KEY", "")
     if not api_key:
-        logger.warning("[OpenAI] ANTHROPIC_API_KEY 없음 — 폴백")
+        logger.warning("[Claude] ANTHROPIC_API_KEY 없음 — 폴백")
         return ""
     try:
         resp = requests.post(
-            "https://api.openai.com/v1/chat/completions",
+            "https://api.anthropic.com/v1/messages",
             headers={
-                "Authorization": f"Bearer {api_key}",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
                 "Content-Type": "application/json",
             },
             json={
@@ -1092,9 +1093,9 @@ def _call_claude(prompt: str,
             timeout=40,
         )
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+        return resp.json()["content"][0]["text"].strip()
     except Exception as e:
-        logger.warning(f"[OpenAI] API 호출 실패: {e}")
+        logger.warning(f"[Claude] API 호출 실패: {e}")
         return ""
 
 
@@ -1168,7 +1169,6 @@ def _generate_weekly_insight(signals: list) -> str:
 
     result = _call_claude(
         _WEEKLY_INSIGHT_PROMPT.format(signals_json=signals_json, date_range=date_range),
-        model="gpt-4o",
         max_tokens=600,
     )
     if result:
@@ -3042,23 +3042,47 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         for l in (ai_insight or "").split("\n")
         if l.strip() and not l.strip().startswith("---")
     ]
-    def _insight_line_html(line):
-        is_header = line.startswith("[") and "]" in line
-        if is_header:
-            return (
-                "<div style='margin:13px 0 5px;font-size:13px;font-weight:900;"
-                "color:rgba(255,255,255,1.0);letter-spacing:.3px'>"
-                f"{_esc(line)}</div>"
+    # Weekly 총평 — Monthly M1 스타일로 섹션 구조화 렌더링
+    _W_SEC = {
+        "핵심 이슈":               ("🎯", "#6ee7b7"),
+        "팔로업 사항":             ("📋", "#93c5fd"),
+        "다음 주 모니터링 포인트": ("📌", "#fcd34d"),
+    }
+    def _weekly_section_html(lines_):
+        from html import escape as _esc2
+        secs = []
+        cur_key, cur_items = None, []
+        for ln in lines_:
+            if ln.startswith("[") and "]" in ln:
+                if cur_key is not None:
+                    secs.append((cur_key, cur_items))
+                cur_key = ln[1:ln.index("]")]
+                cur_items = []
+            elif cur_key is not None and ln:
+                cur_items.append(ln)
+        if cur_key is not None:
+            secs.append((cur_key, cur_items))
+        if not secs:
+            return "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
+        parts = []
+        for key, items in secs:
+            emoji, color = _W_SEC.get(key, ("▸", "#e2e8f0"))
+            parts.append(
+                f"<div style='font-size:11px;font-weight:900;letter-spacing:1.2px;"
+                f"color:{color};margin:14px 0 7px'>{emoji} {key.upper()}</div>"
             )
-        return (
-            "<div style='margin:3px 0;font-size:12.5px;line-height:1.65;"
-            f"color:rgba(255,255,255,.92)'>{_esc(line)}</div>"
-        )
-    insight_html = "".join(
-        _insight_line_html(line)
-        for line in insight_lines
-        if line
-    ) or "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
+            rows = "".join(
+                f"<div style='font-size:12.5px;line-height:1.7;color:rgba(255,255,255,.92);"
+                f"padding:3px 0'>{_esc2(it)}</div>"
+                for it in items if it
+            )
+            if rows:
+                parts.append(
+                    f"<div style='background:rgba(255,255,255,.06);border-radius:8px;"
+                    f"padding:10px 14px;border-left:2px solid {color}'>{rows}</div>"
+                )
+        return "".join(parts)
+    insight_html = _weekly_section_html(insight_lines) or         "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
 
     # ── 히트맵 헤더
     day_headers = "".join(
@@ -3426,7 +3450,7 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
                 _struct += (
                     "<div style='margin-top:13px;background:rgba(251,191,36,.1);border-left:3px solid #fbbf24;"
                     "border-radius:0 8px 8px 0;padding:10px 14px'>"
-                    "<span style='font-size:11px;font-weight:900;letter-spacing:1px;color:#fbbf24'>⚖️ 경영층 판단 필요</span>"
+                    "<div style='font-size:11px;font-weight:900;letter-spacing:1.2px;color:#fbbf24;margin-bottom:7px'>⚖️ 경영층 판단 필요</div>"
                     f"<div style='font-size:13.5px;font-weight:600;line-height:1.7;margin-top:3px'>{_esc(_exec)}</div></div>"
                 )
             insight_html = _struct

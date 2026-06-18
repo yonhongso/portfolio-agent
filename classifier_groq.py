@@ -11,8 +11,8 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Anthropic Claude Haiku — 빠르고 저렴, rate limit 없음
-OPENAI_MODEL = "gpt-4o"
-OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
 
 
 # ── 데이터 구조 ───────────────────────────────────────────────────────────────
@@ -79,43 +79,44 @@ class ClassificationCache:
 # ── Anthropic API 호출 ────────────────────────────────────────────────────────
 
 def _call(prompt: str, retries: int = 3) -> Optional[str]:
-    """OpenAI GPT API 호출. 실패 시 지수 백오프."""
+    """Anthropic Claude Haiku API 호출. 실패 시 지수 백오프."""
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
-        logger.error("[OpenAI] ANTHROPIC_API_KEY 없음")
+        logger.error("[Claude] ANTHROPIC_API_KEY 없음")
         return None
 
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
     }
     payload = {
-        "model": OPENAI_MODEL,
+        "model": CLAUDE_MODEL,
         "max_tokens": 1024,
         "messages": [{"role": "user", "content": prompt}],
     }
 
     for attempt in range(retries):
         try:
-            r = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=30)
+            r = requests.post(CLAUDE_API_URL, headers=headers, json=payload, timeout=30)
             r.raise_for_status()
-            return r.json()["choices"][0]["message"]["content"]
+            return r.json()["content"][0]["text"]
         except requests.exceptions.HTTPError as e:
             wait = 3 * (attempt + 1)
             try:
                 err_body = r.json()
             except Exception:
                 err_body = r.text[:300]
-            msg = f"[OpenAI] HTTP 오류: {e} | 응답: {err_body} → {wait}초 대기 (시도 {attempt+1}/{retries})"
+            msg = f"[Claude] HTTP 오류: {e} | 응답: {err_body} → {wait}초 대기 (시도 {attempt+1}/{retries})"
             logger.warning(msg)
             print(msg, flush=True)
             time.sleep(wait)
         except Exception as e:
             wait = 3 * (attempt + 1)
-            logger.warning(f"[OpenAI] 오류: {e} → {wait}초 대기 (시도 {attempt+1}/{retries})")
+            logger.warning(f"[Claude] 오류: {e} → {wait}초 대기 (시도 {attempt+1}/{retries})")
             time.sleep(wait)
 
-    msg = f"[OpenAI] {retries}회 재시도 모두 실패 — None 반환"
+    msg = f"[Claude] {retries}회 재시도 모두 실패 — None 반환"
     logger.warning(msg)
     print(msg, flush=True)
     return None
@@ -189,7 +190,7 @@ class Classifier:
         api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
         if not api_key:
             raise ValueError(".env 또는 GitHub Secrets에 ANTHROPIC_API_KEY가 없습니다.")
-        logger.info(f"[Claude] 초기화 완료 | 모델: {OPENAI_MODEL}")
+        logger.info(f"[Claude] 초기화 완료 | 모델: {CLAUDE_MODEL}")
 
     def run(self, articles: list) -> list[ClassifiedSignal]:
         # 회사별로 그룹핑
@@ -283,7 +284,7 @@ class Classifier:
                         summary_ko     = r.get("summary_ko",  ""),
                         summary_en     = r.get("summary_en",  ""),
                         classified_at  = datetime.now(timezone.utc).isoformat(),
-                        model_used     = OPENAI_MODEL,
+                        model_used     = CLAUDE_MODEL,
                         content_hash   = a.content_hash,
                     )
                     signals.append(s)
