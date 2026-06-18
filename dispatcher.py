@@ -1190,7 +1190,7 @@ def _generate_monthly_insight(signals: list, year: int, month: int) -> str:
     date_range = f"{m_start.strftime('%Y.%m.%d')}~{m_end.strftime('%m.%d')}"
 
     key_signals = sorted(signals,
-        key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
+        key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag, 2),
                        x.source_tier))[:12]
     if not key_signals:
         return f"{year}년 {month}월({date_range}) 주요 포트폴리오 이슈 없음."
@@ -1263,7 +1263,7 @@ def build_weekly_html(signals: list[ClassifiedSignal], week_range: str,
 
     # ── Executive Summary
     top3_signals = sorted(signals,
-                          key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
+                          key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag, 2),
                                          x.source_tier))[:3]
     top3_items = "".join(
         f"<li style='margin:5px 0;font-size:13px'>"
@@ -1309,7 +1309,7 @@ def build_weekly_html(signals: list[ClassifiedSignal], week_range: str,
     for company, arts in sorted(by_company.items(), key=_weekly_sort):
         reds_co    = [a for a in arts if a.action_flag == "red"]
         yellows_co = [a for a in arts if a.action_flag == "yellow"]
-        top_arts   = sorted(arts, key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
+        top_arts   = sorted(arts, key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag, 2),
                                                   x.source_tier))[:3]
         border_color = "#e74c3c" if reds_co else "#f39c12" if yellows_co else "#ced4da"
 
@@ -1448,7 +1448,7 @@ def build_monthly_html(signals: list[ClassifiedSignal], year: int, month: int,
 
     # ── TOP 5 시그널
     top5 = sorted(signals,
-                  key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
+                  key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag, 2),
                                  x.source_tier))[:5]
     top5_rows = "".join(f"""
     <tr style='background:{"#fff0f0" if s.action_flag=="red" else "#fffbf0" if s.action_flag=="yellow" else "#fff"}'>
@@ -1469,7 +1469,7 @@ def build_monthly_html(signals: list[ClassifiedSignal], year: int, month: int,
         r = sum(1 for s in arts if s.action_flag == "red")
         y = sum(1 for s in arts if s.action_flag == "yellow")
         w = sum(1 for s in arts if s.action_flag == "white")
-        top_sig = sorted(arts, key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
+        top_sig = sorted(arts, key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag, 2),
                                                x.source_tier))[0]
         impl = _implication_template(top_sig.signal_type)
         risk_bg = "#fff0f0" if r else "#fffbf0" if y else "#fff"
@@ -2444,7 +2444,7 @@ class TelegramCommandHandler:
         for co, arts in sorted(by_co.items()):
             r = sum(1 for a in arts if a.action_flag == "red")
             y = sum(1 for a in arts if a.action_flag == "yellow")
-            top = sorted(arts, key=lambda x: ({"red":0,"yellow":1,"white":2}[x.action_flag],
+            top = sorted(arts, key=lambda x: ({"red":0,"yellow":1,"white":2}.get(x.action_flag, 2),
                                                x.source_tier))[0]
             emoji = "🔴" if r else "🟡" if y else "⚪"
             lines.append(f"\n{emoji} <b>{co}</b>  [🔴{r} 🟡{y}]")
