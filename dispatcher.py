@@ -2033,7 +2033,9 @@ class Dispatcher:
         )
 
         # ── 브라우저 Daily 탭과 동일한 렌더러로 이메일 HTML 생성
-        generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+        from datetime import timezone as _tz, timedelta as _td
+    _KST = _tz(_td(hours=9))
+    generated_at = datetime.now(_KST).strftime("%Y-%m-%d %H:%M KST")
         daily_content = _build_daily_overview_section(signals, generated_at)
         html = f"""<!DOCTYPE html>
 <html lang="ko">
@@ -2852,7 +2854,9 @@ def save_dashboard(signals: list[ClassifiedSignal],
     monthly_signals: 과거 30일치 시그널 (없으면 오늘 signals 사용)
     """
     import re
-    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    from datetime import timezone as _tz, timedelta as _td
+    _KST = _tz(_td(hours=9))
+    generated_at = datetime.now(_KST).strftime("%Y-%m-%d %H:%M KST")
 
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -4095,7 +4099,9 @@ def build_drafts_html(drafts_data: list[dict], generated_at: str) -> str:
 def save_drafts(drafts_data: list[dict],
                 path: str = "drafts.html") -> str:
     """커뮤니케이션 초안 인터랙티브 HTML 저장."""
-    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    from datetime import timezone as _tz, timedelta as _td
+    _KST = _tz(_td(hours=9))
+    generated_at = datetime.now(_KST).strftime("%Y-%m-%d %H:%M KST")
     html = build_drafts_html(drafts_data, generated_at)
     with open(path, "w", encoding="utf-8") as f:
         f.write(html)
