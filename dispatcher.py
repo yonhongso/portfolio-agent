@@ -3322,7 +3322,7 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
     return (
         "<div style='background:#eef2f7;padding:0 0 4px'>"
         # AI 총평 박스
-        "<div style='background:linear-gradient(135deg,#1a2e7a 0%,#2d1b69 100%);"
+        "<div style='background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);"
         "border-radius:14px;padding:20px 22px;margin-bottom:18px;color:#fff;"
         "box-shadow:0 10px 28px rgba(30,41,59,.18)'>"
         "<div style='font-size:11px;color:rgba(255,255,255,.58);font-weight:800;"
