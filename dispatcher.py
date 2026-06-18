@@ -1067,7 +1067,7 @@ def build_daily_pdf(signals: list[ClassifiedSignal], date_str: str) -> bytes:
 # =============================================================================
 
 def _call_claude(prompt: str,
-                 model: str = "claude-haiku-4-5-20251001",
+                 model: str = "gpt-4o",
                  max_tokens: int = 1200) -> str:
     """
     Anthropic Claude API 호출 (Weekly·Monthly 심층 분석 전용).
@@ -1079,10 +1079,9 @@ def _call_claude(prompt: str,
         return ""
     try:
         resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
+            "https://api.openai.com/v1/chat/completions",
             headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             json={
@@ -1093,7 +1092,7 @@ def _call_claude(prompt: str,
             timeout=40,
         )
         resp.raise_for_status()
-        return resp.json()["content"][0]["text"].strip()
+        return resp.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
         logger.warning(f"[Claude] API 호출 실패: {e}")
         return ""
