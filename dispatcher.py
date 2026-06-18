@@ -1973,18 +1973,42 @@ class Dispatcher:
         if not targets:
             print("[Telegram] 신규 시그널 없음 → 발송 생략", flush=True)
             return
+        _senti_map = {
+            "Positive": "📈 긍정", "Negative": "📉 부정",
+            "Neutral": "➡️ 중립", "Mixed": "➡️ 중립",
+        }
+        _star_map = {"High": "★★★", "Medium": "★★☆", "Low": "★☆☆"}
         lines = []
         for s in targets:
             emoji = "🔴" if s.action_flag == "red" else "🟡"
-            summary = (s.summary_ko or s.title or "")[:60]
+            action_text = "즉시검토 요망" if s.action_flag == "red" else "동향 주시"
+            senti = _senti_map.get(getattr(s, "sentiment", ""), "")
+            stars = _star_map.get(getattr(s, "relevance", ""), "")
+            summary = (s.summary_ko or s.title or "")[:80]
             url = (getattr(s, "url", "") or "").strip()
-            parts = [
-                f"{emoji} <b>{s.portfolio_name}</b> [{s.signal_type}]",
-                f"   {summary}",
-            ]
+            pub_raw = (getattr(s, "published_at", "") or "")[:16].replace("T", " ")
+            source = getattr(s, "source", "")
+            line2_parts = [f"[{s.signal_type}]"]
+            if senti:
+                line2_parts.append(senti)
+            if stars:
+                line2_parts.append(stars)
+            line2 = " · ".join(line2_parts)
+            text = (
+                f"{emoji} <b>{s.portfolio_name}</b> — {action_text}\n"
+                f"<b>{line2}</b>\n"
+                f"\n"
+                f"{summary}\n"
+                f"\n"
+            )
             if url:
-                parts.append(f'   🔗 <a href="{url}">원문 보기</a>')
-            lines.append("\n".join(parts))
+                link_line = f'<a href="{url}">🔗 원문 보기</a>'
+                if pub_raw:
+                    link_line += f"  ·  {pub_raw}"
+                if source:
+                    link_line += f"  ·  {source}"
+                text += link_line
+            lines.append(text)
         msg = "\n\n".join(lines)
         try:
             self.telegram.send(msg)
