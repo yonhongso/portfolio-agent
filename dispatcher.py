@@ -3090,7 +3090,14 @@ def _build_weekly_section(signals: list[ClassifiedSignal], generated_at: str) ->
         if cur_key is not None:
             secs.append((cur_key, cur_items))
         if not secs:
-            return "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
+            # 섹션 헤더 없는 fallback 텍스트 — 그대로 렌더링
+            from html import escape as _esc2
+            fallback = "".join(
+                f"<div style='margin:3px 0;font-size:12.5px;line-height:1.65;"
+                f"color:rgba(255,255,255,.92)'>{_esc2(ln)}</div>"
+                for ln in lines_ if ln
+            )
+            return fallback or "<div style='font-size:13px;color:rgba(255,255,255,.78)'>이번 주 특이 총평 없음</div>"
         parts = []
         for key, items in secs:
             emoji, color = _W_SEC.get(key, ("▸", "#e2e8f0"))
