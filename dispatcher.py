@@ -603,7 +603,7 @@ def build_daily_html(signals: list[ClassifiedSignal], date_str: str,
 
     # ── 시그널 카드 — 회사별 묶음 렌더링
     from collections import defaultdict as _dd
-    visible = [s for s in signals if s.action_flag in ("red", "yellow")]
+    visible = [s for s in signals if s.action_flag in ("red", "yellow", "white")]
     by_co: dict[str, list] = _dd(list)
     for s in visible:
         by_co[s.portfolio_name].append(s)
@@ -1967,12 +1967,12 @@ class Dispatcher:
             logger.warning(f"[Telegram] 일일 요약 발송 실패: {e}")
 
     def send_telegram_realtime(self, signals: list):
-        """수시 알림: 신규 red/yellow 시그널만, 건수 헤더 없이 발송."""
+        """수시 알림: 모든 시그널 포함, 건수 헤더 없이 발송."""
         if not self.cfg["dispatch"]["telegram"]["enabled"]:
             return
-        targets = [s for s in signals if s.action_flag in ("red", "yellow")]
+        targets = [s for s in signals if s.action_flag in ("red", "yellow", "white")]
         if not targets:
-            print("[Telegram] 신규 red/yellow 없음 → 발송 생략", flush=True)
+            print("[Telegram] 신규 시그널 없음 → 발송 생략", flush=True)
             return
         lines = []
         for s in targets:
@@ -2034,8 +2034,8 @@ class Dispatcher:
 
         # ── 브라우저 Daily 탭과 동일한 렌더러로 이메일 HTML 생성
         from datetime import timezone as _tz, timedelta as _td
-    _KST = _tz(_td(hours=9))
-    generated_at = datetime.now(_KST).strftime("%Y-%m-%d %H:%M KST")
+        _KST = _tz(_td(hours=9))
+        generated_at = datetime.now(_KST).strftime("%Y-%m-%d %H:%M KST")
         daily_content = _build_daily_overview_section(signals, generated_at)
         html = f"""<!DOCTYPE html>
 <html lang="ko">
@@ -3653,7 +3653,7 @@ def _build_monthly_section(signals: list[ClassifiedSignal], generated_at: str) -
     _seen_co = set()
     top_events = []
     for s in sorted(
-        [s for s in signals if s.action_flag in ("red", "yellow")],
+        [s for s in signals if s.action_flag in ("red", "yellow", "white")],
         key=lambda x: (FLAG_RANK.get(x.action_flag, 2), x.portfolio_name)
     ):
         if s.portfolio_name in _seen_co:
