@@ -57,7 +57,7 @@ def main():
         return
 
     print(f"전체 시그널 {len(fresh)}건 텔레그램 발송")
-    dispatcher.send_telegram_alerts(fresh)
+    dispatcher.send_telegram_realtime(fresh)
 
 
 if __name__ == "__main__":
